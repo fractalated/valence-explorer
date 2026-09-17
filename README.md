@@ -22,11 +22,17 @@ Other behavior:
 - All 118 elements, periods 1–7, plus the lanthanide and actinide rows with the
   57–71 / 89–103 connector cells in group 3.
 - Only the outermost shell's electrons are amber; inner shells stay neutral grey.
+- A **jump box** takes a symbol, a name or an atomic number (`Cl`, `chlorine`, `17`) and
+  scrolls that element into the middle of the table — the fastest way in on a phone.
 - Arrow keys (← →) step through atomic numbers one proton at a time, which is a good way
   to walk across a period and watch the outer shell fill.
 - Orbit motion can be switched off, and is off automatically for anyone whose system
   asks for reduced motion.
 - Light and dark theme follow the student's device setting.
+- **On phones** the diagram sits beside the row/column readout in a card pinned to the top
+  of the screen, the shell counts and configuration collapse behind a tap, and the table
+  keeps its canonical shape in a horizontal scroller below. Landscape shows more of the
+  table at once.
 
 ## Accuracy notes
 
