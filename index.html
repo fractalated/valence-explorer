@@ -387,13 +387,21 @@
       display:flex; align-items:center; justify-content:center;
     }
     .diagram{height:100%; width:auto; max-width:100%; max-height:100%;}
+    /* tighten the readout so the leftover height goes to the atom */
+    .panel-head{padding:12px 16px 10px;}
+    .rule{padding:7px 16px; gap:2px 10px;}
+    .shells{padding:6px 16px 8px;}
+    .shell-row{padding:2px 0;}
+    .note{padding:0 16px 10px;}
+    .config{padding:7px 16px 10px;}
+    .controls{padding:8px 16px;}
   }
   /* shorter laptop screens: trim the chrome and the rows so the table still fits */
   @media (min-width:1000px) and (max-height:900px){
     .wrap{padding-block:14px;}
-    h1{font-size:31px;}
+    h1{font-size:29px;}
     .lede{font-size:14px;}
-    header.top{gap:4px; margin-bottom:12px;}
+    header.top{gap:3px; margin-bottom:10px;}
     .findbar{margin-bottom:8px;}
     .cell .nm{display:none;}
     .cell{min-height:clamp(28px,4.6cqi,40px);}
