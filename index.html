@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Click any element to see its Bohr shells, with the period row giving the shell count and the group column giving the valence electrons.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20y%3D%22.9em%22%20font-size%3D%2290%22%3E%E2%9A%9B%EF%B8%8F%3C%2Ftext%3E%3C%2Fsvg%3E">
+<style>
+  /* baseline reset */
+  :root{
+    color-scheme:light dark;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  body{margin:0;}
+  img{max-width:100%;}
+  [hidden]{display:none!important;}
+</style>
+<title>Shells &amp; Valence Explorer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#eceee9; --surface:#fbfcfa; --surface-2:#f2f4f0;
+    --ink:#171c19; --ink-2:#5b655f; --ink-3:#8a938d;
+    --line:#d3d8d2; --line-2:#bcc3bb;
+    --s:#1d6f86; --p:#a8552b; --d:#4f6b3a; --f:#7a4a74;
+    --hl:#b9791a; --hl-soft:#e8d3a4;
+    --nuc:#2d3733;
+    --shadow:0 1px 2px rgba(23,28,25,.06), 0 8px 24px -16px rgba(23,28,25,.25);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#12161a; --surface:#1a1f24; --surface-2:#20262c;
+      --ink:#e8ece9; --ink-2:#9aa5a0; --ink-3:#6e7a75;
+      --line:#2b3238; --line-2:#3a434a;
+      --s:#6fc0d8; --p:#e0946a; --d:#9dc47c; --f:#c99bc4;
+      --hl:#f0c14b; --hl-soft:#4a3d1c;
+      --nuc:#cdd6d1;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12161a; --surface:#1a1f24; --surface-2:#20262c;
+    --ink:#e8ece9; --ink-2:#9aa5a0; --ink-3:#6e7a75;
+    --line:#2b3238; --line-2:#3a434a;
+    --s:#6fc0d8; --p:#e0946a; --d:#9dc47c; --f:#c99bc4;
+    --hl:#f0c14b; --hl-soft:#4a3d1c;
+    --nuc:#cdd6d1;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+  }
+
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+    font-size:15px; line-height:1.55;
+  }
+  .wrap{max-width:1280px; margin:0 auto; padding-inline:16px; padding-block:22px 40px;}
+
+  /* ---------- header ---------- */
+  header.top{display:flex; flex-direction:column; gap:6px; margin-bottom:18px;}
+  .eyebrow{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; font-weight:500;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
+  }
+  h1{
+    font-family:"Instrument Serif",Georgia,serif; font-weight:400;
+    font-size:clamp(30px,5vw,44px); line-height:1.05; margin:0; text-wrap:balance;
+  }
+  .lede{color:var(--ink-2); max-width:62ch; margin:0;}
+  .lede b{color:var(--ink); font-weight:600;}
+
+  /* ---------- layout ---------- */
+  .stage{display:grid; gap:20px; grid-template-columns:1fr; align-items:start;}
+  @media (min-width:1000px){
+    .stage{grid-template-columns:minmax(0,1fr) 340px;}
+    .panel{position:sticky; top:calc(env(safe-area-inset-top,0px) + 12px);}
+  }
+
+  /* ---------- panel ---------- */
+  .panel{
+    background:var(--surface); border:1px solid var(--line); border-radius:6px;
+    box-shadow:var(--shadow); overflow:hidden; order:-1;
+  }
+  @media (min-width:1000px){ .panel{order:0;} }
+  @media (max-width:999px){
+    .panel{position:sticky; top:calc(env(safe-area-inset-top,0px) + 4px); z-index:5;}
+  }
+  .panel-head{
+    display:flex; align-items:flex-start; gap:12px; justify-content:space-between;
+    padding:14px 16px 12px; border-bottom:1px solid var(--line);
+    background:var(--surface-2);
+    background:color-mix(in oklab, var(--blk,var(--ink-3)) 10%, var(--surface));
+  }
+  .el-name{font-family:"Instrument Serif",Georgia,serif; font-size:30px; line-height:1.05;}
+  .el-meta{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11.5px;
+    letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); margin-top:2px;
+  }
+  .el-sym{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-weight:600;
+    font-size:34px; line-height:1; color:var(--blk,var(--ink)); flex:none;
+  }
+  .el-z{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12px;
+    color:var(--ink-2); text-align:right; display:block; margin-top:4px;
+  }
+
+  .diagram{display:block; width:100%; height:auto; max-width:100%; background:transparent;}
+  .diagram-box{padding:6px 10px 0;}
+
+  .ring-line{fill:none; stroke:var(--line-2); stroke-width:1;}
+  .ring-line.outer{stroke:var(--hl); stroke-width:1.4;}
+  .e-dot{fill:var(--ink-2);}
+  .e-dot.val{fill:var(--hl);}
+  .nuc{fill:var(--nuc);}
+  .nuc-t{
+    fill:var(--surface); font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-weight:600; text-anchor:middle;
+  }
+  .ring-n{
+    fill:var(--ink-3); font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:9.5px; text-anchor:middle; dominant-baseline:middle;
+  }
+  .ring-n-bg{fill:var(--surface);}
+  .spin{transform-origin:170px 170px;}
+  @media (prefers-reduced-motion:no-preference){
+    .spinning .spin{animation:orbit var(--dur,60s) linear infinite;}
+  }
+  @keyframes orbit{to{transform:rotate(360deg);}}
+
+  /* ---------- readout ---------- */
+  .rules{border-top:1px solid var(--line);}
+  .rule{
+    display:grid; grid-template-columns:auto 1fr; gap:4px 10px;
+    padding:10px 16px; border-bottom:1px solid var(--line); align-items:baseline;
+  }
+  .rule:last-child{border-bottom:0;}
+  .rule-k{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; font-weight:500;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3);
+    grid-column:1 / -1;
+  }
+  .rule-v{grid-column:1 / -1; font-size:14.5px;}
+  .rule-v .num{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-weight:600; color:var(--ink);
+  }
+  .rule-v .num.hl{color:var(--hl);}
+
+  .shells{padding:10px 16px 14px; border-bottom:1px solid var(--line);}
+  .shell-row{
+    display:grid; grid-template-columns:2.6em 1fr auto auto; gap:10px; align-items:center;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:12.5px;
+    padding:3px 0; color:var(--ink-2);
+  }
+  .shell-row.is-outer{color:var(--ink);}
+  .shell-row .bar{height:7px; border-radius:1px; background:var(--line-2); min-width:2px;}
+  .shell-row.is-outer .bar{background:var(--hl);}
+  .shell-row .cnt{font-variant-numeric:tabular-nums; font-weight:500;}
+  .shell-tag{
+    font-family:"IBM Plex Sans",sans-serif; font-size:10px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--hl); font-weight:600;
+  }
+  .config{
+    padding:10px 16px 14px; font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:12.5px; color:var(--ink-2); overflow-x:auto; white-space:nowrap;
+  }
+  .config .lbl{
+    display:block; font-size:11px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-3); margin-bottom:3px; font-family:"IBM Plex Mono",monospace;
+  }
+  .note{
+    padding:0 16px 14px; font-size:13px; color:var(--ink-2); border-bottom:1px solid var(--line);
+  }
+  .note b{color:var(--ink);}
+
+  .controls{
+    display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center;
+    padding:11px 16px; background:var(--surface-2); border-top:1px solid var(--line);
+    font-size:13px;
+  }
+  .controls label{display:flex; gap:7px; align-items:center; cursor:pointer; color:var(--ink-2);}
+  .controls input{accent-color:var(--hl); width:15px; height:15px;}
+  .stepper{display:flex; gap:6px; margin-left:auto;}
+  .stepper button{
+    font-family:"IBM Plex Mono",monospace; font-size:13px; line-height:1;
+    padding:5px 9px; border-radius:4px; border:1px solid var(--line-2);
+    background:var(--surface); color:var(--ink); cursor:pointer;
+  }
+  .stepper button:hover{border-color:var(--ink-3);}
+
+  /* ---------- periodic table ---------- */
+  .table-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:6px;
+    box-shadow:var(--shadow); padding:14px 14px 16px;
+  }
+  .table-scroll{overflow-x:auto; padding-bottom:4px;}
+  .pt{
+    display:grid; gap:3px;
+    grid-template-columns:52px repeat(18, minmax(38px,1fr));
+    min-width:760px;
+  }
+  .gh, .ph{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; color:var(--ink-3);
+    display:flex; align-items:center; justify-content:center; text-align:center;
+  }
+  .gh{flex-direction:column; gap:1px; font-size:10.5px; padding-bottom:3px; line-height:1.15;}
+  .gh .gn{font-weight:600; color:var(--ink-2); font-size:11.5px;}
+  .gh .gv{font-size:9.5px; letter-spacing:.02em;}
+  .gh.hi .gn, .gh.hi .gv{color:var(--hl);}
+  .ph{
+    flex-direction:column; align-items:flex-end; padding-right:7px; gap:0; font-size:10.5px;
+    line-height:1.15; text-align:right;
+  }
+  .ph .pn{font-weight:600; color:var(--ink-2); font-size:11.5px;}
+  .ph .ps{font-size:9.5px;}
+  .ph.hi .pn, .ph.hi .ps{color:var(--hl);}
+
+  .cell{
+    appearance:none; -webkit-appearance:none; cursor:pointer; text-align:left;
+    border:1px solid var(--line); border-radius:3px;
+    background:var(--surface-2);
+    background:color-mix(in oklab, var(--blk) 12%, var(--surface));
+    color:var(--ink); padding:3px 4px 4px; min-height:44px;
+    display:flex; flex-direction:column; gap:0; overflow:hidden;
+    transition:transform .08s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .cell .z{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:8.5px;
+    color:var(--ink-3); line-height:1.1; font-variant-numeric:tabular-nums;
+  }
+  .cell .sym{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:14px; font-weight:600;
+    line-height:1.1; color:var(--blk);
+    color:color-mix(in oklab, var(--blk) 70%, var(--ink));
+  }
+  .cell .nm{
+    font-size:8px; color:var(--ink-3); line-height:1.15; overflow:hidden;
+    text-overflow:ellipsis; white-space:nowrap;
+  }
+  .cell:hover{border-color:var(--blk); transform:translateY(-1px);}
+  .cell:focus-visible{outline:2px solid var(--hl); outline-offset:1px;}
+  .cell.in-period{background:var(--surface-2); background:color-mix(in oklab, var(--blk) 22%, var(--surface));}
+  .cell.in-group{box-shadow:inset 0 0 0 1.5px var(--hl);}
+  .cell.sel{
+    border-color:var(--ink); background:var(--surface-2);
+    background:color-mix(in oklab, var(--blk) 34%, var(--surface));
+    box-shadow:inset 0 0 0 1.5px var(--hl), 0 0 0 2px var(--line-2);
+    box-shadow:inset 0 0 0 1.5px var(--hl), 0 0 0 2px color-mix(in oklab, var(--ink) 30%, transparent);
+  }
+  .fgap{
+    grid-column:3; display:flex; align-items:center; justify-content:center;
+    font-family:"IBM Plex Mono",monospace; font-size:9px; color:var(--ink-3);
+    border:1px dashed var(--line-2); border-radius:3px; min-height:44px; text-align:center;
+    line-height:1.2; padding:2px;
+  }
+  .frow-label{
+    grid-column:1 / 3; display:flex; align-items:center; justify-content:flex-end;
+    font-family:"IBM Plex Mono",monospace; font-size:9.5px; color:var(--ink-3);
+    text-align:right; padding-right:7px; line-height:1.2;
+  }
+  .spacer{grid-column:1 / -1; height:7px;}
+
+  .legend{
+    display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center;
+    margin-top:12px; padding-top:11px; border-top:1px solid var(--line);
+    font-size:12px; color:var(--ink-2);
+  }
+  .legend span.k{display:inline-flex; align-items:center; gap:6px;}
+  .legend i{
+    width:11px; height:11px; border-radius:2px; display:inline-block;
+    background:var(--blk);
+    background:color-mix(in oklab, var(--blk) 45%, var(--surface));
+    border:1px solid var(--blk);
+    border:1px solid color-mix(in oklab, var(--blk) 60%, var(--line));
+  }
+  .hint{
+    font-size:12.5px; color:var(--ink-3); margin-top:10px;
+    font-family:"IBM Plex Mono",monospace;
+  }
+  .b-s{--blk:var(--s);} .b-p{--blk:var(--p);} .b-d{--blk:var(--d);} .b-f{--blk:var(--f);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Bohr shells · periods 1–7</div>
+    <h1>Shells &amp; Valence Explorer</h1>
+    <p class="lede">Pick any element. Its <b>row</b> tells you how many electron shells to draw; for the main groups, its <b>column</b> tells you how many electrons land in the outermost one.</p>
+  </header>
+
+  <div class="stage">
+    <section class="table-card">
+      <div class="table-scroll">
+        <div class="pt" id="pt"></div>
+      </div>
+      <div class="legend" id="legend"></div>
+      <p class="hint">Click a box, or use ← → to step through atomic numbers.</p>
+    </section>
+
+    <aside class="panel" id="panel">
+      <div class="panel-head" id="head">
+        <div>
+          <div class="el-name" id="elName">Chlorine</div>
+          <div class="el-meta" id="elMeta">Period 3 · Group 17 · p-block</div>
+        </div>
+        <div>
+          <div class="el-sym" id="elSym">Cl</div>
+          <span class="el-z" id="elZ">Z = 17</span>
+        </div>
+      </div>
+
+      <div class="diagram-box">
+        <svg class="diagram spinning" id="svg" viewBox="0 0 340 340" role="img" aria-labelledby="svgTitle">
+          <title id="svgTitle">Bohr diagram</title>
+        </svg>
+      </div>
+
+      <div class="rules">
+        <div class="rule">
+          <span class="rule-k">Row → shells</span>
+          <span class="rule-v" id="rShells"></span>
+        </div>
+        <div class="rule">
+          <span class="rule-k">Column → valence electrons</span>
+          <span class="rule-v" id="rVal"></span>
+        </div>
+      </div>
+
+      <div class="shells" id="shellList"></div>
+      <p class="note" id="note"></p>
+      <div class="config"><span class="lbl">Electron configuration</span><span id="cfg"></span></div>
+
+      <div class="controls">
+        <label for="spinChk"><input type="checkbox" id="spinChk" checked> Orbit motion</label>
+        <div class="stepper">
+          <button type="button" id="prevBtn" aria-label="Previous element">&minus;1 p&#8314;</button>
+          <button type="button" id="nextBtn" aria-label="Next element">+1 p&#8314;</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* Z, symbol, name, period, group (0 = f-block row), block */
+  var E = [
+    [1,"H","Hydrogen",1,1,"s"],[2,"He","Helium",1,18,"s"],
+    [3,"Li","Lithium",2,1,"s"],[4,"Be","Beryllium",2,2,"s"],[5,"B","Boron",2,13,"p"],
+    [6,"C","Carbon",2,14,"p"],[7,"N","Nitrogen",2,15,"p"],[8,"O","Oxygen",2,16,"p"],
+    [9,"F","Fluorine",2,17,"p"],[10,"Ne","Neon",2,18,"p"],
+    [11,"Na","Sodium",3,1,"s"],[12,"Mg","Magnesium",3,2,"s"],[13,"Al","Aluminium",3,13,"p"],
+    [14,"Si","Silicon",3,14,"p"],[15,"P","Phosphorus",3,15,"p"],[16,"S","Sulfur",3,16,"p"],
+    [17,"Cl","Chlorine",3,17,"p"],[18,"Ar","Argon",3,18,"p"],
+    [19,"K","Potassium",4,1,"s"],[20,"Ca","Calcium",4,2,"s"],[21,"Sc","Scandium",4,3,"d"],
+    [22,"Ti","Titanium",4,4,"d"],[23,"V","Vanadium",4,5,"d"],[24,"Cr","Chromium",4,6,"d"],
+    [25,"Mn","Manganese",4,7,"d"],[26,"Fe","Iron",4,8,"d"],[27,"Co","Cobalt",4,9,"d"],
+    [28,"Ni","Nickel",4,10,"d"],[29,"Cu","Copper",4,11,"d"],[30,"Zn","Zinc",4,12,"d"],
+    [31,"Ga","Gallium",4,13,"p"],[32,"Ge","Germanium",4,14,"p"],[33,"As","Arsenic",4,15,"p"],
+    [34,"Se","Selenium",4,16,"p"],[35,"Br","Bromine",4,17,"p"],[36,"Kr","Krypton",4,18,"p"],
+    [37,"Rb","Rubidium",5,1,"s"],[38,"Sr","Strontium",5,2,"s"],[39,"Y","Yttrium",5,3,"d"],
+    [40,"Zr","Zirconium",5,4,"d"],[41,"Nb","Niobium",5,5,"d"],[42,"Mo","Molybdenum",5,6,"d"],
+    [43,"Tc","Technetium",5,7,"d"],[44,"Ru","Ruthenium",5,8,"d"],[45,"Rh","Rhodium",5,9,"d"],
+    [46,"Pd","Palladium",5,10,"d"],[47,"Ag","Silver",5,11,"d"],[48,"Cd","Cadmium",5,12,"d"],
+    [49,"In","Indium",5,13,"p"],[50,"Sn","Tin",5,14,"p"],[51,"Sb","Antimony",5,15,"p"],
+    [52,"Te","Tellurium",5,16,"p"],[53,"I","Iodine",5,17,"p"],[54,"Xe","Xenon",5,18,"p"],
+    [55,"Cs","Caesium",6,1,"s"],[56,"Ba","Barium",6,2,"s"],
+    [57,"La","Lanthanum",6,0,"f"],[58,"Ce","Cerium",6,0,"f"],[59,"Pr","Praseodymium",6,0,"f"],
+    [60,"Nd","Neodymium",6,0,"f"],[61,"Pm","Promethium",6,0,"f"],[62,"Sm","Samarium",6,0,"f"],
+    [63,"Eu","Europium",6,0,"f"],[64,"Gd","Gadolinium",6,0,"f"],[65,"Tb","Terbium",6,0,"f"],
+    [66,"Dy","Dysprosium",6,0,"f"],[67,"Ho","Holmium",6,0,"f"],[68,"Er","Erbium",6,0,"f"],
+    [69,"Tm","Thulium",6,0,"f"],[70,"Yb","Ytterbium",6,0,"f"],[71,"Lu","Lutetium",6,0,"f"],
+    [72,"Hf","Hafnium",6,4,"d"],[73,"Ta","Tantalum",6,5,"d"],[74,"W","Tungsten",6,6,"d"],
+    [75,"Re","Rhenium",6,7,"d"],[76,"Os","Osmium",6,8,"d"],[77,"Ir","Iridium",6,9,"d"],
+    [78,"Pt","Platinum",6,10,"d"],[79,"Au","Gold",6,11,"d"],[80,"Hg","Mercury",6,12,"d"],
+    [81,"Tl","Thallium",6,13,"p"],[82,"Pb","Lead",6,14,"p"],[83,"Bi","Bismuth",6,15,"p"],
+    [84,"Po","Polonium",6,16,"p"],[85,"At","Astatine",6,17,"p"],[86,"Rn","Radon",6,18,"p"],
+    [87,"Fr","Francium",7,1,"s"],[88,"Ra","Radium",7,2,"s"],
+    [89,"Ac","Actinium",7,0,"f"],[90,"Th","Thorium",7,0,"f"],[91,"Pa","Protactinium",7,0,"f"],
+    [92,"U","Uranium",7,0,"f"],[93,"Np","Neptunium",7,0,"f"],[94,"Pu","Plutonium",7,0,"f"],
+    [95,"Am","Americium",7,0,"f"],[96,"Cm","Curium",7,0,"f"],[97,"Bk","Berkelium",7,0,"f"],
+    [98,"Cf","Californium",7,0,"f"],[99,"Es","Einsteinium",7,0,"f"],[100,"Fm","Fermium",7,0,"f"],
+    [101,"Md","Mendelevium",7,0,"f"],[102,"No","Nobelium",7,0,"f"],[103,"Lr","Lawrencium",7,0,"f"],
+    [104,"Rf","Rutherfordium",7,4,"d"],[105,"Db","Dubnium",7,5,"d"],[106,"Sg","Seaborgium",7,6,"d"],
+    [107,"Bh","Bohrium",7,7,"d"],[108,"Hs","Hassium",7,8,"d"],[109,"Mt","Meitnerium",7,9,"d"],
+    [110,"Ds","Darmstadtium",7,10,"d"],[111,"Rg","Roentgenium",7,11,"d"],[112,"Cn","Copernicium",7,12,"d"],
+    [113,"Nh","Nihonium",7,13,"p"],[114,"Fl","Flerovium",7,14,"p"],[115,"Mc","Moscovium",7,15,"p"],
+    [116,"Lv","Livermorium",7,16,"p"],[117,"Ts","Tennessine",7,17,"p"],[118,"Og","Oganesson",7,18,"p"]
+  ];
+
+  /* ---- electron configuration: Madelung order + measured exceptions ---- */
+  var ORDER = ["1s","2s","2p","3s","3p","4s","3d","4p","5s","4d","5p","6s","4f","5d","6p","7s","5f","6d","7p"];
+  var CAP = {s:2,p:6,d:10,f:14};
+  var EXC = {
+    24:{"3d":5,"4s":1}, 29:{"3d":10,"4s":1},
+    41:{"4d":4,"5s":1}, 42:{"4d":5,"5s":1}, 44:{"4d":7,"5s":1}, 45:{"4d":8,"5s":1},
+    46:{"4d":10,"5s":0}, 47:{"4d":10,"5s":1},
+    57:{"4f":0,"5d":1,"6s":2}, 58:{"4f":1,"5d":1,"6s":2}, 64:{"4f":7,"5d":1,"6s":2},
+    78:{"5d":9,"6s":1}, 79:{"5d":10,"6s":1},
+    89:{"5f":0,"6d":1,"7s":2}, 90:{"5f":0,"6d":2,"7s":2}, 91:{"5f":2,"6d":1,"7s":2},
+    92:{"5f":3,"6d":1,"7s":2}, 93:{"5f":4,"6d":1,"7s":2}, 96:{"5f":7,"6d":1,"7s":2},
+    103:{"5f":14,"6d":0,"7s":2,"7p":1}
+  };
+  var SUP = {0:"⁰",1:"¹",2:"²",3:"³",4:"⁴",5:"⁵",6:"⁶",7:"⁷",8:"⁸",9:"⁹"};
+  function sup(n){ return String(n).split("").map(function(d){return SUP[d];}).join(""); }
+
+  function configure(z){
+    var left = z, occ = {};
+    for (var i=0;i<ORDER.length && left>0;i++){
+      var key = ORDER[i], take = Math.min(CAP[key[1]], left);
+      occ[key] = take; left -= take;
+    }
+    var ex = EXC[z];
+    if (ex) for (var k in ex) occ[k] = ex[k];
+    var shells = [0,0,0,0,0,0,0];
+    ORDER.forEach(function(key){
+      if (occ[key]) shells[+key[0]-1] += occ[key];
+    });
+    while (shells.length && shells[shells.length-1] === 0) shells.pop();
+    var parts = ORDER.filter(function(k){return occ[k];}).map(function(k){return k+sup(occ[k]);});
+    return {shells:shells, text:parts.join(" ")};
+  }
+
+  var DATA = E.map(function(r){
+    var c = configure(r[0]);
+    return {z:r[0], sym:r[1], name:r[2], period:r[3], group:r[4], block:r[5],
+            shells:c.shells, cfg:c.text};
+  });
+
+  /* ---- build the table ---- */
+  var GROUP_VAL = {1:"1 e⁻",2:"2 e⁻",13:"3 e⁻",14:"4 e⁻",15:"5 e⁻",
+                   16:"6 e⁻",17:"7 e⁻",18:"8 e⁻"};
+  var pt = document.getElementById("pt");
+  var frag = document.createDocumentFragment();
+
+  frag.appendChild(el("div","gh",""));              /* corner */
+  for (var g=1; g<=18; g++){
+    var gh = el("div","gh","");
+    gh.id = "gh"+g;
+    gh.appendChild(el("span","gn",String(g)));
+    gh.appendChild(el("span","gv", GROUP_VAL[g] || "varies"));
+    frag.appendChild(gh);
+  }
+
+  var cells = {};
+  for (var p=1; p<=7; p++){
+    var ph = el("div","ph","");
+    ph.id = "ph"+p;
+    ph.appendChild(el("span","pn","Period "+p));
+    ph.appendChild(el("span","ps", p+(p===1?" shell":" shells")));
+    frag.appendChild(ph);
+
+    for (var col=1; col<=18; col++){
+      var d = DATA.filter(function(x){return x.period===p && x.group===col;})[0];
+      if (d){
+        frag.appendChild(cell(d));
+      } else if (col===3 && (p===6 || p===7)){
+        var gap = el("div","fgap", p===6 ? "57–71" : "89–103");
+        gap.style.gridColumn = "auto";
+        frag.appendChild(gap);
+      } else {
+        frag.appendChild(el("div","",""));
+      }
+    }
+  }
+
+  frag.appendChild(el("div","spacer",""));
+  [[57,71,"Lanthanides","Period 6 · 6 shells"],[89,103,"Actinides","Period 7 · 7 shells"]].forEach(function(rg){
+    var lab = el("div","frow-label","");
+    lab.appendChild(el("span","", rg[2]));
+    frag.appendChild(lab);
+    for (var z=rg[0]; z<=rg[1]; z++) frag.appendChild(cell(byZ(z)));
+    frag.appendChild(el("div","",""));
+    frag.appendChild(el("div","",""));
+  });
+
+  pt.appendChild(frag);
+
+  function el(tag, cls, text){
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text) n.textContent = text;
+    return n;
+  }
+  function byZ(z){ return DATA[z-1]; }
+  function cell(d){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "cell b-"+d.block;
+    b.dataset.z = d.z;
+    b.setAttribute("aria-label", d.name+", atomic number "+d.z);
+    b.appendChild(el("span","z",String(d.z)));
+    b.appendChild(el("span","sym",d.sym));
+    b.appendChild(el("span","nm",d.name));
+    cells[d.z] = b;
+    return b;
+  }
+
+  var legend = document.getElementById("legend");
+  [["s","s-block","s"],["p","p-block","p"],["d","d-block (transition metals)","d"],
+   ["f","f-block (lanthanides &amp; actinides)","f"]].forEach(function(l){
+    var k = el("span","k","");
+    var i = el("i","b-"+l[2],"");
+    k.appendChild(i);
+    k.appendChild(el("span","", l[1].replace("&amp;","&")));
+    legend.appendChild(k);
+  });
+  var vk = el("span","k","");
+  var vi = el("i","","");
+  vi.style.background = "var(--hl)";
+  vi.style.borderColor = "var(--hl)";
+  vk.appendChild(vi);
+  vk.appendChild(el("span","","outermost shell = valence"));
+  legend.appendChild(vk);
+
+  /* ---- draw + render ---- */
+  var SVGNS = "http://www.w3.org/2000/svg";
+  var svg = document.getElementById("svg");
+  var cur = 17;
+
+  function svgEl(tag, attrs){
+    var n = document.createElementNS(SVGNS, tag);
+    for (var a in attrs) n.setAttribute(a, attrs[a]);
+    return n;
+  }
+
+  function draw(d){
+    while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild);
+    var cx = 170, cy = 170, k = d.shells.length;
+    var first = 48, last = 156;
+    var step = k > 1 ? (last - first) / (k - 1) : 0;
+
+    d.shells.forEach(function(count, i){
+      var r = first + i * step;
+      var isOuter = (i === k - 1);
+      svg.appendChild(svgEl("circle",{cx:cx, cy:cy, r:r.toFixed(1),
+        "class":"ring-line" + (isOuter ? " outer" : "")}));
+
+      var g = svgEl("g",{"class":"spin"});
+      g.style.setProperty("--dur", (34 + i * 13) + "s");
+      if (i % 2) g.style.animationDirection = "reverse";
+      var dot = count > 18 ? 3.1 : (count > 8 ? 4 : 5);
+      var start = -90 + 180 / count;
+      for (var j=0; j<count; j++){
+        var a = (start + j * 360 / count) * Math.PI / 180;
+        g.appendChild(svgEl("circle",{
+          cx:(cx + r * Math.cos(a)).toFixed(1), cy:(cy + r * Math.sin(a)).toFixed(1),
+          r:dot, "class":"e-dot" + (isOuter ? " val" : "")
+        }));
+      }
+      svg.appendChild(g);
+
+      svg.appendChild(svgEl("circle",{cx:cx, cy:(cy - r).toFixed(1), r:8, "class":"ring-n-bg"}));
+      var t = svgEl("text",{x:cx, y:(cy - r).toFixed(1), "class":"ring-n"});
+      t.textContent = "n=" + (i + 1);
+      t.setAttribute("style","font-size:9px");
+      svg.appendChild(t);
+    });
+
+    svg.appendChild(svgEl("circle",{cx:cx, cy:cy, r:26, "class":"nuc"}));
+    var nz = svgEl("text",{x:cx, y:cy - 2, "class":"nuc-t"});
+    nz.setAttribute("style","font-size:17px");
+    nz.textContent = d.z;
+    svg.appendChild(nz);
+    var np = svgEl("text",{x:cx, y:cy + 13, "class":"nuc-t"});
+    np.setAttribute("style","font-size:9.5px");
+    np.textContent = "p⁺";
+    svg.appendChild(np);
+  }
+
+  var BLOCK_NOTE = {
+    s: "Groups 1 and 2 sit in the s-block: the outer shell holds 1 or 2 electrons, exactly the group number.",
+    p: "Groups 13–18 sit in the p-block: subtract 10 from the group number to get the valence count.",
+    d: "Transition metals break the tidy pattern. The outer shell keeps 1–2 electrons while the inner d shell fills, so the group number is not the valence count.",
+    f: "Lanthanides and actinides fill an f shell two levels in. The outer shell stays at 2 electrons, so these rows are read by shell count, not by valence."
+  };
+
+  function select(z, scroll){
+    if (z < 1 || z > 118) return;
+    cur = z;
+    var d = byZ(z);
+    var k = d.shells.length;
+    var outer = d.shells[k - 1];
+
+    for (var i=1; i<=118; i++){
+      var c = cells[i], e = byZ(i);
+      c.classList.toggle("sel", i === z);
+      c.classList.toggle("in-period", e.period === d.period);
+      c.classList.toggle("in-group", d.group !== 0 && e.group === d.group);
+    }
+    for (var g2=1; g2<=18; g2++)
+      document.getElementById("gh"+g2).classList.toggle("hi", g2 === d.group);
+    for (var p2=1; p2<=7; p2++)
+      document.getElementById("ph"+p2).classList.toggle("hi", p2 === d.period);
+
+    document.getElementById("head").style.setProperty("--blk","var(--"+d.block+")");
+    document.getElementById("panel").style.setProperty("--blk","var(--"+d.block+")");
+    document.getElementById("elName").textContent = d.name;
+    document.getElementById("elSym").textContent = d.sym;
+    document.getElementById("elZ").textContent = "Z = " + d.z;
+    document.getElementById("elMeta").textContent =
+      "Period " + d.period + " · " + (d.group ? "Group " + d.group : (d.z < 89 ? "Lanthanide" : "Actinide")) + " · " + d.block + "-block";
+
+    document.getElementById("rShells").innerHTML =
+      "Row <span class=\"num\">" + d.period + "</span> of the table → <span class=\"num\">" + k +
+      "</span> shell" + (k === 1 ? "" : "s") + " to draw.";
+
+    var valHTML;
+    if (d.block === "s" || d.block === "p"){
+      var expected = d.group <= 2 ? d.group : d.group - 10;
+      valHTML = "Group <span class=\"num\">" + d.group + "</span> → <span class=\"num hl\">" +
+        expected + "</span> valence electron" + (expected === 1 ? "" : "s") +
+        " in shell n=<span class=\"num\">" + k + "</span>.";
+      if (d.z === 2) valHTML += " Helium is the exception: its one shell holds only 2.";
+    } else {
+      valHTML = "Outermost shell holds <span class=\"num hl\">" + outer + "</span> electron" +
+        (outer === 1 ? "" : "s") + ", filled after the inner " +
+        (d.block === "d" ? "d" : "f") + " shell — the group number does not predict it here.";
+    }
+    document.getElementById("rVal").innerHTML = valHTML;
+
+    var list = document.getElementById("shellList");
+    list.textContent = "";
+    var max = Math.max.apply(null, d.shells);
+    d.shells.forEach(function(count, i){
+      var row = el("div","shell-row" + (i === k - 1 ? " is-outer" : ""),"");
+      row.appendChild(el("span","","n=" + (i + 1)));
+      var bar = el("div","bar","");
+      bar.style.width = Math.max(4, Math.round(count / max * 100)) + "%";
+      row.appendChild(bar);
+      row.appendChild(el("span","shell-tag", i === k - 1 ? "valence" : ""));
+      row.appendChild(el("span","cnt", count + " e⁻"));
+      list.appendChild(row);
+    });
+
+    document.getElementById("note").innerHTML = BLOCK_NOTE[d.block];
+    document.getElementById("cfg").textContent = d.cfg;
+
+    draw(d);
+    if (scroll && cells[z].scrollIntoView) cells[z].scrollIntoView({block:"nearest", inline:"nearest"});
+  }
+
+  pt.addEventListener("click", function(ev){
+    var b = ev.target.closest(".cell");
+    if (b) select(+b.dataset.z, false);
+  });
+  document.addEventListener("keydown", function(ev){
+    if (ev.target && /^(INPUT|TEXTAREA)$/.test(ev.target.tagName)) return;
+    if (ev.key === "ArrowRight"){ select(cur + 1, true); ev.preventDefault(); }
+    if (ev.key === "ArrowLeft"){ select(cur - 1, true); ev.preventDefault(); }
+  });
+  document.getElementById("prevBtn").addEventListener("click", function(){ select(cur - 1, true); });
+  document.getElementById("nextBtn").addEventListener("click", function(){ select(cur + 1, true); });
+  document.getElementById("spinChk").addEventListener("change", function(){
+    svg.classList.toggle("spinning", this.checked);
+  });
+
+  select(17, false);
+})();
+</script>
+
+</body>
+</html>
