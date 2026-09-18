@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Build an atom's electrons one at a time and watch the orbitals fill, pair up and take shape as probability clouds.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20y%3D%22.9em%22%20font-size%3D%2290%22%3E%E2%98%81%EF%B8%8F%3C%2Ftext%3E%3C%2Fsvg%3E">
+<style>
+  /* baseline reset */
+  :root{
+    color-scheme:light dark;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  body{margin:0;}
+  img{max-width:100%;}
+  [hidden]{display:none!important;}
+</style>
+<title>Orbital Builder</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#eceee9; --surface:#fbfcfa; --surface-2:#f2f4f0;
+    --ink:#171c19; --ink-2:#4c574f; --ink-3:#66706a;
+    --line:#d3d8d2; --line-2:#bcc3bb;
+    --s:#1d6f86; --p:#a8552b; --d:#4f6b3a; --f:#7a4a74;
+    --hl:#b9791a;
+    --pos:#1d6f86; --neg:#a8552b;
+    --up:#1d6f86; --down:#a8552b;
+    --shadow:0 1px 2px rgba(23,28,25,.06), 0 8px 24px -16px rgba(23,28,25,.25);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#12161a; --surface:#1a1f24; --surface-2:#20262c;
+      --ink:#e8ece9; --ink-2:#adb8b2; --ink-3:#8e9992;
+      --line:#2b3238; --line-2:#3a434a;
+      --s:#6fc0d8; --p:#e0946a; --d:#9dc47c; --f:#c99bc4;
+      --hl:#f0c14b;
+      --pos:#6fc0d8; --neg:#e0946a;
+      --up:#6fc0d8; --down:#e0946a;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --bg:#12161a; --surface:#1a1f24; --surface-2:#20262c;
+    --ink:#e8ece9; --ink-2:#adb8b2; --ink-3:#8e9992;
+    --line:#2b3238; --line-2:#3a434a;
+    --s:#6fc0d8; --p:#e0946a; --d:#9dc47c; --f:#c99bc4;
+    --hl:#f0c14b;
+    --pos:#6fc0d8; --neg:#e0946a;
+    --up:#6fc0d8; --down:#e0946a;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+  }
+  :root[data-theme="light"]{color-scheme:light;}
+
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+    font-size:15px; line-height:1.55;
+  }
+  .wrap{max-width:1280px; margin:0 auto; padding-inline:16px; padding-block:20px 36px;}
+
+  /* ---------- header ---------- */
+  header.top{display:flex; flex-direction:row; align-items:flex-start; gap:16px; margin-bottom:14px;}
+  .top-text{display:flex; flex-direction:column; gap:5px; min-width:0;}
+  .eyebrow{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; font-weight:500;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
+  }
+  h1{
+    font-family:"Instrument Serif",Georgia,serif; font-weight:400;
+    font-size:clamp(30px,5vw,42px); line-height:1.05; margin:0; text-wrap:balance;
+  }
+  .lede{color:var(--ink-2); max-width:66ch; margin:0;}
+  .lede b{color:var(--ink); font-weight:600;}
+  .top-actions{margin-left:auto; display:flex; flex-direction:column; gap:7px; align-items:flex-end; flex:none;}
+  .btn{
+    cursor:pointer; font-family:"IBM Plex Sans",sans-serif; font-size:12.5px; font-weight:600;
+    padding:6px 11px; border-radius:5px; border:1px solid var(--line-2);
+    background:var(--surface); color:var(--ink-2); line-height:1.2; white-space:nowrap;
+    text-decoration:none; display:inline-block;
+  }
+  .btn:hover{border-color:var(--ink-3); color:var(--ink);}
+  .btn:focus-visible{outline:2px solid var(--hl); outline-offset:1px;}
+
+  /* ---------- element bar ---------- */
+  .bar{
+    display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center;
+    background:var(--surface); border:1px solid var(--line); border-radius:6px;
+    box-shadow:var(--shadow); padding:11px 14px; margin-bottom:16px;
+  }
+  .bar label{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10px; font-weight:600;
+    letter-spacing:.09em; text-transform:uppercase; color:var(--ink-2);
+  }
+  .bar input[type="search"]{
+    flex:1 1 170px; max-width:250px; min-width:0;
+    font-family:"IBM Plex Sans",sans-serif; font-size:14px;
+    padding:6px 9px; border-radius:4px; border:1px solid var(--line-2);
+    background:var(--surface); color:var(--ink);
+  }
+  .bar input::placeholder{color:var(--ink-3);}
+  .bar input:focus-visible{outline:2px solid var(--hl); outline-offset:1px; border-color:var(--hl);}
+  .steps{display:flex; gap:5px;}
+  .steps button{
+    font-family:"IBM Plex Mono",monospace; font-size:13px; line-height:1; cursor:pointer;
+    padding:6px 9px; border-radius:4px; border:1px solid var(--line-2);
+    background:var(--surface); color:var(--ink);
+  }
+  .steps button:hover{border-color:var(--ink-3);}
+  .steps button:focus-visible{outline:2px solid var(--hl); outline-offset:1px;}
+  .who{
+    margin-left:auto; display:flex; align-items:baseline; gap:10px; min-width:0;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  .who .nm{font-family:"Instrument Serif",Georgia,serif; font-size:24px; line-height:1;}
+  .who .cfg{font-size:12.5px; color:var(--ink-2); overflow-x:auto; white-space:nowrap; max-width:46vw;}
+
+  /* ---------- stage ---------- */
+  .stage{display:grid; gap:16px; grid-template-columns:1fr; align-items:start;}
+  @media (min-width:980px){ .stage{grid-template-columns:minmax(0,1fr) 380px;} }
+
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:6px;
+    box-shadow:var(--shadow); overflow:hidden;
+  }
+  .card-head{
+    display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
+    padding:10px 14px; border-bottom:1px solid var(--line);
+  }
+  .card-head h2{
+    margin:0; font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px;
+    font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3);
+  }
+  .card-head .now{font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--ink); font-weight:600;}
+
+  /* ---------- viewer ---------- */
+  .view-wrap{position:relative; background:var(--surface);}
+  canvas#sky{display:block; width:100%; height:auto; touch-action:none; cursor:grab;}
+  canvas#sky:active{cursor:grabbing;}
+  .view-foot{
+    display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center;
+    padding:9px 14px; border-top:1px solid var(--line); background:var(--surface-2);
+    font-size:12.5px; color:var(--ink-2);
+  }
+  .key{display:inline-flex; align-items:center; gap:6px; font-size:12px;}
+  .key i{width:10px; height:10px; border-radius:50%; display:inline-block;}
+  .key i.pos{background:var(--pos);} .key i.neg{background:var(--neg);}
+  .view-foot label{display:flex; gap:6px; align-items:center; cursor:pointer;}
+  .view-foot input{accent-color:var(--hl); width:15px; height:15px;}
+  .caption{
+    padding:10px 14px; font-size:13px; color:var(--ink-2); border-top:1px solid var(--line);
+  }
+  .caption b{color:var(--ink);}
+  .noshape{
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    padding:30px 20px; color:var(--ink-2); font-size:13.5px; min-height:200px;
+  }
+
+  /* ---------- orbital diagram ---------- */
+  .diagram{padding:6px 12px 12px; max-height:560px; overflow-y:auto;}
+  .sub{
+    display:grid; grid-template-columns:2.9em 1fr auto; gap:10px; align-items:center;
+    padding:4px 2px; border-bottom:1px solid var(--line);
+  }
+  .sub:last-child{border-bottom:0;}
+  .sub-k{
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:13.5px; font-weight:600;
+    color:var(--ink);
+  }
+  .sub-k .l{color:var(--ink-3); font-weight:500;}
+  .boxes{display:flex; gap:4px; flex-wrap:wrap;}
+  .orb{
+    cursor:pointer; width:30px; height:26px; padding:0; border-radius:3px;
+    border:1px solid var(--line-2); background:var(--surface);
+    display:flex; align-items:center; justify-content:center; gap:1px;
+    font-family:"IBM Plex Mono",monospace; font-size:14px; line-height:1;
+  }
+  .orb:hover{border-color:var(--ink-3);}
+  .orb:focus-visible{outline:2px solid var(--hl); outline-offset:1px;}
+  .orb.sel{border-color:var(--ink); box-shadow:inset 0 0 0 1.5px var(--hl);}
+  .orb.noshape{opacity:.75; cursor:default; min-height:0; padding:0;}
+  .orb .ar{font-weight:600;}
+  .orb .ar.up{color:var(--up);}
+  .orb .ar.dn{color:var(--down);}
+  .orb.fresh{animation:land .5s ease-out;}
+  @keyframes land{from{transform:scale(.6); opacity:.2;} to{transform:scale(1); opacity:1;}}
+  @media (prefers-reduced-motion:reduce){ .orb.fresh{animation:none;} }
+  .sub-cnt{
+    font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-2);
+    font-variant-numeric:tabular-nums;
+  }
+  .sub.filling{background:color-mix(in oklab, var(--hl) 10%, var(--surface));}
+  .rule{
+    padding:10px 14px; border-top:1px solid var(--line); font-size:13px; color:var(--ink-2);
+    background:var(--surface-2);
+  }
+  .rule b{color:var(--ink);}
+
+  /* ---------- explainer ---------- */
+  .notes{
+    margin-top:18px; display:grid; gap:14px; grid-template-columns:1fr;
+  }
+  @media (min-width:800px){ .notes{grid-template-columns:repeat(3,1fr);} }
+  .note-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:6px;
+    padding:13px 15px; box-shadow:var(--shadow);
+  }
+  .note-card h3{
+    margin:0 0 5px; font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600;
+    letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3);
+  }
+  .note-card p{margin:0; font-size:13.5px; color:var(--ink-2);}
+  .note-card p b{color:var(--ink);}
+</style>
+
+<script>
+  /* theme is stamped before the body so the page never flashes the wrong one,
+     and shares its stored choice with the Bohr page on the same origin */
+  (function(){
+    var t = null;
+    try { t = localStorage.getItem("ve-theme"); } catch (e) {}
+    document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
+  })();
+</script>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="top-text">
+      <div class="eyebrow">Sub-shells · spin · probability</div>
+      <h1>Orbital Builder</h1>
+      <p class="lede">Add electrons one at a time and watch where they go. Each orbital holds <b>two</b> electrons with opposite spin, and every dot in the cloud is one <b>possible position</b> — not an electron, and not a surface.</p>
+    </div>
+    <div class="top-actions">
+      <button type="button" id="themeBtn" class="btn">Light mode</button>
+      <a class="btn" id="bohrLink" href="index.html">← Bohr shells</a>
+    </div>
+  </header>
+
+  <div class="bar">
+    <label for="jump">Element</label>
+    <input id="jump" type="search" list="elList" autocomplete="off" spellcheck="false"
+           placeholder="Symbol, name or number — C, carbon, 6">
+    <datalist id="elList"></datalist>
+    <div class="steps">
+      <button type="button" id="lessBtn" title="Remove one electron">−1 e⁻</button>
+      <button type="button" id="moreBtn" title="Add one electron">+1 e⁻</button>
+      <button type="button" id="playBtn" title="Fill this element one electron at a time">▶ Build up</button>
+    </div>
+    <div class="who">
+      <span class="nm" id="elName">Carbon</span>
+      <span class="cfg" id="elCfg"></span>
+    </div>
+  </div>
+
+  <div class="stage">
+    <section class="card">
+      <div class="card-head">
+        <h2>Shape of</h2>
+        <span class="now" id="viewName">2p</span>
+      </div>
+      <div class="view-wrap">
+        <canvas id="sky" width="760" height="560" aria-label="Orbital probability cloud"></canvas>
+        <p class="noshape" id="noShape" hidden></p>
+      </div>
+      <div class="view-foot">
+        <span class="key"><i class="pos"></i> wave positive</span>
+        <span class="key"><i class="neg"></i> wave negative</span>
+        <label for="allChk"><input type="checkbox" id="allChk"> Show the whole sub-shell</label>
+        <label for="spinChk"><input type="checkbox" id="spinChk" checked> Turn</label>
+      </div>
+      <p class="caption" id="caption"></p>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>Filling order</h2>
+        <span class="now" id="eCount">6 e⁻</span>
+      </div>
+      <div class="diagram" id="diagram"></div>
+      <p class="rule" id="ruleNote"></p>
+    </section>
+  </div>
+
+  <div class="notes">
+    <div class="note-card">
+      <h3>What changed from Bohr</h3>
+      <p>Bohr put the electron on a ring at a fixed distance, like a planet. It has no path at all. <b>The cloud is a map of where it is likely to be</b>, and nothing is orbiting anything.</p>
+    </div>
+    <div class="note-card">
+      <h3>Why two per orbital</h3>
+      <p>An orbital is one standing wave, and only <b>two</b> electrons fit in it — one spin up, one spin down. A third has nowhere to go, so the next electron starts a new orbital.</p>
+    </div>
+    <div class="note-card">
+      <h3>Why they spread out first</h3>
+      <p>Electrons repel, so within a set of same-energy orbitals each one takes an <b>empty</b> orbital before any of them doubles up. That is why 2p fills ↑ ↑ ↑ before ↑↓ ↑↓ ↑↓.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- elements ---------- */
+  var E = "H Hydrogen,He Helium,Li Lithium,Be Beryllium,B Boron,C Carbon,N Nitrogen,O Oxygen,F Fluorine,Ne Neon,Na Sodium,Mg Magnesium,Al Aluminum,Si Silicon,P Phosphorus,S Sulfur,Cl Chlorine,Ar Argon,K Potassium,Ca Calcium,Sc Scandium,Ti Titanium,V Vanadium,Cr Chromium,Mn Manganese,Fe Iron,Co Cobalt,Ni Nickel,Cu Copper,Zn Zinc,Ga Gallium,Ge Germanium,As Arsenic,Se Selenium,Br Bromine,Kr Krypton,Rb Rubidium,Sr Strontium,Y Yttrium,Zr Zirconium,Nb Niobium,Mo Molybdenum,Tc Technetium,Ru Ruthenium,Rh Rhodium,Pd Palladium,Ag Silver,Cd Cadmium,In Indium,Sn Tin,Sb Antimony,Te Tellurium,I Iodine,Xe Xenon,Cs Cesium,Ba Barium,La Lanthanum,Ce Cerium,Pr Praseodymium,Nd Neodymium,Pm Promethium,Sm Samarium,Eu Europium,Gd Gadolinium,Tb Terbium,Dy Dysprosium,Ho Holmium,Er Erbium,Tm Thulium,Yb Ytterbium,Lu Lutetium,Hf Hafnium,Ta Tantalum,W Tungsten,Re Rhenium,Os Osmium,Ir Iridium,Pt Platinum,Au Gold,Hg Mercury,Tl Thallium,Pb Lead,Bi Bismuth,Po Polonium,At Astatine,Rn Radon,Fr Francium,Ra Radium,Ac Actinium,Th Thorium,Pa Protactinium,U Uranium,Np Neptunium,Pu Plutonium,Am Americium,Cm Curium,Bk Berkelium,Cf Californium,Es Einsteinium,Fm Fermium,Md Mendelevium,No Nobelium,Lr Lawrencium,Rf Rutherfordium,Db Dubnium,Sg Seaborgium,Bh Bohrium,Hs Hassium,Mt Meitnerium,Ds Darmstadtium,Rg Roentgenium,Cn Copernicium,Nh Nihonium,Fl Flerovium,Mc Moscovium,Lv Livermorium,Ts Tennessine,Og Oganesson"
+    .split(",").map(function(pair, i){
+      var bits = pair.split(" ");
+      return {z:i + 1, sym:bits[0], name:bits[1]};
+    });
+
+  /* ---------- configurations: same maths as the Bohr page, verified against NIST ---------- */
+  var ORDER = ["1s","2s","2p","3s","3p","4s","3d","4p","5s","4d","5p","6s","4f","5d","6p","7s","5f","6d","7p"];
+  var CAP = {s:2, p:6, d:10, f:14};
+  var EXC = {
+    24:{"3d":5,"4s":1}, 29:{"3d":10,"4s":1},
+    41:{"4d":4,"5s":1}, 42:{"4d":5,"5s":1}, 44:{"4d":7,"5s":1}, 45:{"4d":8,"5s":1},
+    46:{"4d":10,"5s":0}, 47:{"4d":10,"5s":1},
+    57:{"4f":0,"5d":1,"6s":2}, 58:{"4f":1,"5d":1,"6s":2}, 64:{"4f":7,"5d":1,"6s":2},
+    78:{"5d":9,"6s":1}, 79:{"5d":10,"6s":1},
+    89:{"5f":0,"6d":1,"7s":2}, 90:{"5f":0,"6d":2,"7s":2}, 91:{"5f":2,"6d":1,"7s":2},
+    92:{"5f":3,"6d":1,"7s":2}, 93:{"5f":4,"6d":1,"7s":2}, 96:{"5f":7,"6d":1,"7s":2},
+    103:{"5f":14,"6d":0,"7s":2,"7p":1}
+  };
+  var SUP = {0:"⁰",1:"¹",2:"²",3:"³",4:"⁴",5:"⁵",6:"⁶",7:"⁷",8:"⁸",9:"⁹"};
+  function sup(n){ return String(n).split("").map(function(d){ return SUP[d]; }).join(""); }
+
+  function configure(z){
+    var left = z, occ = {}, i, k;
+    for (i = 0; i < ORDER.length && left > 0; i++){
+      var key = ORDER[i], take = Math.min(CAP[key[1]], left);
+      occ[key] = take; left -= take;
+    }
+    if (EXC[z]) for (k in EXC[z]) occ[k] = EXC[z][k];
+    return occ;
+  }
+  function cfgText(occ){
+    return ORDER.filter(function(k){ return occ[k]; })
+                .map(function(k){ return k + sup(occ[k]); }).join(" ");
+  }
+  /* the plain aufbau prediction, for spotting the elements that break it */
+  function aufbau(z){
+    var left = z, occ = {}, i;
+    for (i = 0; i < ORDER.length && left > 0; i++){
+      var key = ORDER[i], take = Math.min(CAP[key[1]], left);
+      occ[key] = take; left -= take;
+    }
+    return occ;
+  }
+
+  E.forEach(function(e){ e.occ = configure(e.z); e.cfg = cfgText(e.occ); });
+
+  /* ---------- orbital shapes ---------- */
+  var LABEL = {s:0, p:1, d:2, f:3};
+  /* max is the largest |Y| on the unit sphere, used to scale the rejection test */
+  var SHAPES = {
+    s: [{key:"s", max:1}],
+    p: [{key:"px", max:1}, {key:"py", max:1}, {key:"pz", max:1}],
+    d: [{key:"dxy", max:0.5}, {key:"dxz", max:0.5}, {key:"dyz", max:0.5},
+        {key:"dx2y2", max:1}, {key:"dz2", max:2}]
+  };
+  var PLAIN = {s:"s", px:"px", py:"py", pz:"pz", dxy:"dxy", dxz:"dxz", dyz:"dyz",
+               dx2y2:"dx²−y²", dz2:"dz²"};
+  var ANG = {
+    s:     function(x,y,z){ return 1; },
+    px:    function(x,y,z){ return x; },
+    py:    function(x,y,z){ return y; },
+    pz:    function(x,y,z){ return z; },
+    dxy:   function(x,y,z){ return x*y; },
+    dxz:   function(x,y,z){ return x*z; },
+    dyz:   function(x,y,z){ return y*z; },
+    dx2y2: function(x,y,z){ return (x*x - y*y); },
+    dz2:   function(x,y,z){ return (3*z*z - 1); }     /* on the unit sphere r = 1 */
+  };
+
+  /* generalised Laguerre polynomial, by recurrence */
+  function laguerre(k, a, x){
+    if (k === 0) return 1;
+    var l0 = 1, l1 = 1 + a - x, i, t;
+    for (i = 1; i < k; i++){
+      t = ((2*i + 1 + a - x) * l1 - (i + a) * l0) / (i + 1);
+      l0 = l1; l1 = t;
+    }
+    return l1;
+  }
+  /* hydrogen radial function, shape only -- the normalising constant cancels */
+  function radial(n, l, r){
+    var rho = 2 * r / n;
+    return Math.pow(rho, l) * Math.exp(-rho / 2) * laguerre(n - l - 1, 2*l + 1, rho);
+  }
+
+  /* r is drawn from r^2 R(r)^2 and the direction from Y^2, which together are
+     exactly |psi|^2 -- so the dots really are sampled from the probability density */
+  function radialTable(n, l){
+    var rmax = 4 * n * n + 12, steps = 900, cdf = new Float64Array(steps + 1),
+        rs = new Float64Array(steps + 1), sum = 0, i, r, p;
+    for (i = 0; i <= steps; i++){
+      r = rmax * i / steps;
+      p = r * r * Math.pow(radial(n, l, r), 2);
+      sum += p; cdf[i] = sum; rs[i] = r;
+    }
+    for (i = 0; i <= steps; i++) cdf[i] /= sum || 1;
+    return {cdf:cdf, rs:rs};
+  }
+  function pickR(tab){
+    var u = Math.random(), lo = 0, hi = tab.cdf.length - 1, mid;
+    while (lo < hi){ mid = (lo + hi) >> 1; if (tab.cdf[mid] < u) lo = mid + 1; else hi = mid; }
+    return tab.rs[lo];
+  }
+
+  var cloudCache = {};
+  function cloud(n, l, shape, count){
+    var ck = n + "|" + shape + "|" + count;
+    if (cloudCache[ck]) return cloudCache[ck];
+    var tab = radialTable(n, l), fn = ANG[shape];
+    var maxY = 1;
+    SHAPES[["s","p","d"][l]].forEach(function(o){ if (o.key === shape) maxY = o.max; });
+    var pts = new Float32Array(count * 4), got = 0, guard = 0;
+    while (got < count && guard < count * 300){
+      guard++;
+      var u = Math.random() * 2 - 1, ph = Math.random() * Math.PI * 2,
+          s = Math.sqrt(1 - u * u),
+          dx = s * Math.cos(ph), dy = s * Math.sin(ph), dz = u;
+      var val = fn(dx, dy, dz);
+      if (Math.random() * maxY * maxY >= val * val) continue;
+      var r = pickR(tab), o = got * 4;
+      pts[o] = dx * r; pts[o+1] = dy * r; pts[o+2] = dz * r; pts[o+3] = val < 0 ? -1 : 1;
+      got++;
+    }
+    var rr = [];
+    for (var i = 0; i < got; i++) rr.push(Math.hypot(pts[i*4], pts[i*4+1], pts[i*4+2]));
+    rr.sort(function(a, b){ return a - b; });
+    var out = {pts:pts, count:got, extent:(rr[Math.floor(got * 0.97)] || 1)};
+    cloudCache[ck] = out;
+    return out;
+  }
+
+  /* ---------- state ---------- */
+  var cur = 6, filled = 6, view = null, yaw = 0.7, pitch = 0.35, playing = false, playTimer = 0;
+  var lessBtn = document.getElementById("lessBtn"),
+      moreBtn = document.getElementById("moreBtn"),
+      playBtn = document.getElementById("playBtn"),
+      allChk = document.getElementById("allChk"),
+      spinChk = document.getElementById("spinChk"),
+      canvas = document.getElementById("sky"),
+      ctx = canvas.getContext("2d"),
+      noShape = document.getElementById("noShape");
+
+  function byZ(z){ return E[z - 1]; }
+
+  /* how the first `filled` electrons sit in the sub-shells, in aufbau order */
+  function shellsNow(){
+    var e = byZ(cur), left = filled, out = [], i;
+    if (filled >= e.z){
+      ORDER.forEach(function(k){ if (e.occ[k]) out.push({key:k, n:+k[0], l:LABEL[k[1]], count:e.occ[k]}); });
+      return out;
+    }
+    for (i = 0; i < ORDER.length && left > 0; i++){
+      var k = ORDER[i], take = Math.min(CAP[k[1]], left);
+      out.push({key:k, n:+k[0], l:LABEL[k[1]], count:take});
+      left -= take;
+    }
+    return out;
+  }
+
+  /* Hund: one electron into every orbital of a sub-shell before any pairs up */
+  function spread(count, slots){
+    var arr = [], i;
+    for (i = 0; i < slots; i++) arr.push(0);
+    for (i = 0; i < count; i++) arr[i % slots] += 1;
+    return arr;
+  }
+
+  /* ---------- the filling diagram ---------- */
+  function drawDiagram(fresh){
+    var host = document.getElementById("diagram");
+    host.textContent = "";
+    var rows = shellsNow(), any = false;
+    rows.forEach(function(row){
+      var l = row.l, slots = 2 * l + 1, spin = spread(row.count, slots);
+      var wrap = document.createElement("div");
+      wrap.className = "sub" + (row.count < slots * 2 && row.count > 0 ? " filling" : "");
+      var k = document.createElement("span");
+      k.className = "sub-k";
+      k.innerHTML = row.n + '<span class="l">' + row.key[1] + "</span>";
+      wrap.appendChild(k);
+
+      var boxes = document.createElement("div");
+      boxes.className = "boxes";
+      var shapes = SHAPES[["s","p","d"][l]];
+      for (var i = 0; i < slots; i++){
+        var b = document.createElement("button");
+        b.type = "button";
+        var shapeKey = shapes ? shapes[i].key : null;
+        b.className = "orb" + (shapeKey ? "" : " noshape");
+        if (shapeKey){
+          b.dataset.n = row.n; b.dataset.l = l; b.dataset.shape = shapeKey;
+          b.title = row.n + PLAIN[shapeKey];
+          if (view && view.n === row.n && view.shape === shapeKey && !allChk.checked) b.className += " sel";
+        } else {
+          b.disabled = true;
+          b.title = "f orbitals are not drawn here";
+        }
+        if (spin[i] >= 1){
+          var up = document.createElement("span");
+          up.className = "ar up"; up.textContent = "↑";
+          b.appendChild(up);
+          any = true;
+        }
+        if (spin[i] >= 2){
+          var dn = document.createElement("span");
+          dn.className = "ar dn"; dn.textContent = "↓";
+          b.appendChild(dn);
+        }
+        if (fresh && fresh.key === row.key && fresh.index === i) b.className += " fresh";
+        boxes.appendChild(b);
+      }
+      wrap.appendChild(boxes);
+      var cnt = document.createElement("span");
+      cnt.className = "sub-cnt";
+      cnt.textContent = row.count + " e⁻";
+      wrap.appendChild(cnt);
+      host.appendChild(wrap);
+    });
+    if (!any){
+      var empty = document.createElement("p");
+      empty.className = "sub-cnt";
+      empty.style.padding = "10px 2px";
+      empty.textContent = "No electrons yet — press +1 e⁻.";
+      host.appendChild(empty);
+    }
+  }
+
+  /* which orbital the newest electron just went into */
+  function landing(count){
+    var left = count, i;
+    for (i = 0; i < ORDER.length; i++){
+      var k = ORDER[i], cap = CAP[k[1]], slots = cap / 2;
+      if (left <= cap){
+        var idx = (left - 1) % slots;
+        return {key:k, n:+k[0], l:LABEL[k[1]], index:idx, count:left};
+      }
+      left -= cap;
+    }
+    return null;
+  }
+
+  /* ---------- the cloud ---------- */
+  function setView(n, l, shape){
+    view = {n:n, l:l, shape:shape};
+    paint();
+  }
+
+  function currentList(){
+    if (!view) return [];
+    if (!allChk.checked) return [view.shape];
+    return SHAPES[["s","p","d"][view.l]].map(function(o){ return o.key; });
+  }
+
+  function paint(){
+    var shapes = currentList();
+    var nameEl = document.getElementById("viewName");
+    var cap = document.getElementById("caption");
+    if (!view){
+      nameEl.textContent = "—";
+      cap.textContent = "Add an electron to see its orbital.";
+      return;
+    }
+    var sub = view.n + ["s","p","d"][view.l];
+    nameEl.innerHTML = allChk.checked
+      ? sub + " <span style='color:var(--ink-3);font-weight:500'>(all " + shapes.length + ")</span>"
+      : view.n + PLAIN[view.shape];
+    var nodes = view.n - view.l - 1;
+    cap.innerHTML = "Every dot is a place this electron could be found, sampled from the real "
+      + "hydrogen wavefunction — <b>not</b> " + shapes.length + " electrons, and <b>not</b> a surface. "
+      + (nodes > 0
+          ? "The gap inside is a <b>node</b>: " + (nodes === 1 ? "a shell" : nodes + " shells")
+            + " where the electron is never found."
+          : "Drag to turn it.");
+    drawCloud();
+  }
+
+  var clouds = [];
+  function drawCloud(){
+    var shapes = currentList();
+    noShape.hidden = true; canvas.hidden = false;
+    if (!view || !shapes.length){
+      clouds = []; return;
+    }
+    var per = shapes.length > 1 ? 1200 : 3200;
+    clouds = shapes.map(function(sh){ return cloud(view.n, view.l, sh, per); });
+  }
+
+  function render(){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var cssW = canvas.clientWidth || 700, cssH = Math.round(cssW * 0.72);
+    if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)){
+      canvas.width = Math.round(cssW * dpr);
+      canvas.height = Math.round(cssH * dpr);
+      canvas.style.height = cssH + "px";
+    }
+    var w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    if (!clouds.length) return;
+
+    var cs = getComputedStyle(document.documentElement);
+    var posC = cs.getPropertyValue("--pos").trim() || "#1d6f86";
+    var negC = cs.getPropertyValue("--neg").trim() || "#a8552b";
+
+    var extent = 0;
+    clouds.forEach(function(c){ extent = Math.max(extent, c.extent); });
+    var scale = Math.min(w, h) * 0.42 / extent;
+    var cx = w / 2, cy = h / 2;
+
+    var cy_ = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+    var all = [], ci, c, i, x, y, z, X, Y, Z, o;
+    for (ci = 0; ci < clouds.length; ci++){
+      c = clouds[ci];
+      for (i = 0; i < c.count; i++){
+        o = i * 4;
+        x = c.pts[o]; y = c.pts[o+1]; z = c.pts[o+2];
+        X = x * cy_ + z * sy;
+        Z = -x * sy + z * cy_;
+        Y = y * cp - Z * sp;
+        Z = y * sp + Z * cp;
+        all.push([X, Y, Z, c.pts[o+3]]);
+      }
+    }
+    all.sort(function(a, b){ return a[2] - b[2]; });
+
+    var dot = Math.max(1.2, 1.9 * dpr);
+    for (i = 0; i < all.length; i++){
+      var p = all[i];
+      var depth = (p[2] / extent + 1) / 2;            /* 0 far … 1 near */
+      ctx.globalAlpha = 0.18 + depth * 0.5;
+      ctx.fillStyle = p[3] > 0 ? posC : negC;
+      var sz = dot * (0.7 + depth * 0.7);
+      ctx.fillRect(cx + p[0] * scale - sz / 2, cy - p[1] * scale - sz / 2, sz, sz);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+  function tick(){
+    if (spinChk.checked && !reduced.matches && !dragging) yaw += 0.0045;
+    render();
+    requestAnimationFrame(tick);
+  }
+
+  /* drag to turn */
+  var dragging = false, lastX = 0, lastY = 0;
+  canvas.addEventListener("pointerdown", function(ev){
+    dragging = true; lastX = ev.clientX; lastY = ev.clientY;
+    canvas.setPointerCapture(ev.pointerId);
+  });
+  canvas.addEventListener("pointermove", function(ev){
+    if (!dragging) return;
+    yaw += (ev.clientX - lastX) * 0.01;
+    pitch = Math.max(-1.3, Math.min(1.3, pitch + (ev.clientY - lastY) * 0.01));
+    lastX = ev.clientX; lastY = ev.clientY;
+  });
+  function endDrag(ev){ dragging = false; if (ev && ev.pointerId != null && canvas.hasPointerCapture && canvas.hasPointerCapture(ev.pointerId)) canvas.releasePointerCapture(ev.pointerId); }
+  canvas.addEventListener("pointerup", endDrag);
+  canvas.addEventListener("pointercancel", endDrag);
+
+  /* ---------- wiring ---------- */
+  function ruleFor(land){
+    var note = document.getElementById("ruleNote");
+    var e = byZ(cur);
+    var predicted = aufbau(e.z), broken = false, k;
+    if (filled >= e.z){
+      for (k in e.occ) if ((predicted[k] || 0) !== (e.occ[k] || 0)) broken = true;
+    }
+    if (broken){
+      note.innerHTML = "<b>" + e.name + " breaks the pattern.</b> Filling in order predicts "
+        + cfgText(predicted) + ", but it actually sits at " + e.cfg
+        + " — a half or completely full sub-shell is steadier than the rule expects.";
+      return;
+    }
+    if (!land){ note.textContent = "Press +1 e⁻ to place the first electron."; return; }
+    var slots = 2 * land.l + 1;
+    var inSub = land.count, spin = spread(inSub, slots);
+    var pairing = spin[land.index] === 2;
+    note.innerHTML = pairing
+      ? "That electron had to <b>pair up</b>: every " + land.n + ["s","p","d","f"][land.l]
+        + " orbital already held one, so it went in spin-down alongside."
+      : (slots > 1
+          ? "It took an <b>empty</b> " + land.n + ["s","p","d","f"][land.l]
+            + " orbital rather than doubling up — electrons repel, so they spread out first."
+          : "An s sub-shell has just <b>one</b> orbital, so it fills with two electrons and no choice about it.");
+  }
+
+  function show(z, keepFilled){
+    z = Math.max(1, Math.min(118, z));
+    cur = z;
+    var e = byZ(z);
+    if (!keepFilled) filled = z;
+    filled = Math.max(0, Math.min(e.z, filled));
+    document.getElementById("elName").textContent = e.name;
+    document.getElementById("elCfg").textContent = e.cfg;
+    document.getElementById("eCount").textContent = filled + " e⁻";
+    var bl = document.getElementById("bohrLink");
+    bl.href = "index.html?z=" + z;
+    var land = filled > 0 ? landing(filled) : null;
+    drawDiagram(land);
+    ruleFor(land);
+    if (land && SHAPES[["s","p","d"][land.l]]){
+      setView(land.n, land.l, SHAPES[["s","p","d"][land.l]][land.index].key);
+    } else if (land){
+      view = null;
+      canvas.hidden = true; noShape.hidden = false;
+      noShape.textContent = "The seven f orbitals have shapes too complicated to be worth drawing here — "
+        + "the boxes still show how they fill and pair.";
+      document.getElementById("viewName").textContent = land.n + "f";
+      document.getElementById("caption").textContent = "Pick an s, p or d orbital to see a shape.";
+    } else {
+      view = null; clouds = [];
+      document.getElementById("viewName").textContent = "—";
+      document.getElementById("caption").textContent = "Add an electron to see its orbital.";
+    }
+  }
+
+  document.getElementById("diagram").addEventListener("click", function(ev){
+    var b = ev.target.closest(".orb");
+    if (!b || !b.dataset.shape) return;
+    allChk.checked = false;
+    setView(+b.dataset.n, +b.dataset.l, b.dataset.shape);
+    drawDiagram(null);
+  });
+
+  moreBtn.addEventListener("click", function(){
+    if (filled >= byZ(cur).z) return;
+    filled++; show(cur, true);
+  });
+  lessBtn.addEventListener("click", function(){
+    if (filled <= 0) return;
+    filled--; show(cur, true);
+  });
+  function stopPlay(){
+    playing = false; clearInterval(playTimer); playBtn.textContent = "▶ Build up";
+  }
+  playBtn.addEventListener("click", function(){
+    if (playing){ stopPlay(); return; }
+    playing = true; playBtn.textContent = "❚❚ Pause";
+    filled = 0; show(cur, true);
+    playTimer = setInterval(function(){
+      if (filled >= byZ(cur).z){ stopPlay(); return; }
+      filled++; show(cur, true);
+    }, 620);
+  });
+  allChk.addEventListener("change", function(){ paint(); drawDiagram(null); });
+
+  var jump = document.getElementById("jump"), dl = document.getElementById("elList");
+  E.forEach(function(e){
+    var o = document.createElement("option");
+    o.value = e.name + " (" + e.sym + ")";
+    dl.appendChild(o);
+  });
+  function lookup(raw){
+    var q = raw.replace(/\(.*?\)/g, "").trim().toLowerCase();
+    if (!q) return null;
+    if (/^\d+$/.test(q)) return E[+q - 1] || null;
+    var by = function(t){ return E.filter(t)[0] || null; };
+    return by(function(e){ return e.sym.toLowerCase() === q; })
+        || by(function(e){ return e.name.toLowerCase() === q; })
+        || by(function(e){ return e.name.toLowerCase().indexOf(q) === 0; });
+  }
+  jump.addEventListener("input", function(){
+    var e = lookup(this.value);
+    if (e){ stopPlay(); show(e.z); }
+  });
+  jump.addEventListener("keydown", function(ev){
+    if (ev.key === "Enter"){ ev.preventDefault(); this.blur(); }
+  });
+  document.addEventListener("keydown", function(ev){
+    if (ev.target && /^(INPUT|TEXTAREA)$/.test(ev.target.tagName)) return;
+    if (ev.key === "ArrowRight"){ stopPlay(); show(cur + 1); ev.preventDefault(); }
+    if (ev.key === "ArrowLeft"){ stopPlay(); show(cur - 1); ev.preventDefault(); }
+  });
+
+  /* theme */
+  var root = document.documentElement, themeBtn = document.getElementById("themeBtn");
+  function isDark(){ return root.getAttribute("data-theme") !== "light"; }
+  function paintThemeBtn(){
+    themeBtn.textContent = isDark() ? "Light mode" : "Dark mode";
+    themeBtn.title = isDark() ? "Switch to light mode" : "Switch to dark mode";
+    themeBtn.setAttribute("aria-label", themeBtn.title);
+  }
+  themeBtn.addEventListener("click", function(){
+    var next = isDark() ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("ve-theme", next); } catch (e) {}
+    paintThemeBtn();
+  });
+  paintThemeBtn();
+
+  /* start on whatever the Bohr page was showing, if it said */
+  var q = /[?&]z=(\d+)/.exec(location.search);
+  show(q ? +q[1] : 6);
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

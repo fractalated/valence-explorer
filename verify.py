@@ -26,26 +26,45 @@ def fetch(url):
         return r.read().decode("utf-8", "replace")
 
 
+def run_js(pure, tail):
+    fd, path = tempfile.mkstemp(suffix=".js")
+    os.write(fd, (pure + tail).encode("utf-8")); os.close(fd)
+    try:
+        return json.loads(subprocess.check_output(["node", path]))
+    finally:
+        os.unlink(path)
+
+
+def pure_part(filename, marker, needle):
+    """The chemistry code from the top of a page's script, with the DOM code cut off."""
+    src = open(filename, encoding="utf-8").read()
+    script = [s for s in re.findall(r"<script>(.*?)</script>", src, re.S) if needle in s][0]
+    return (script.split(marker)[0]
+            .replace("(function(){", "").replace('"use strict";', ""))
+
+
 def app_data():
-    """Run the page's own pure data/chemistry code under node and dump it."""
-    src = open("index.html", encoding="utf-8").read()
-    script = [s for s in re.findall(r"<script>(.*?)</script>", src, re.S) if "var E = [" in s][0]
-    pure = script.split("/* ---- build the table ---- */")[0]
-    pure = pure.replace("(function(){", "").replace('"use strict";', "")
-    pure += """
+    """index.html: full element data plus the ion chemistry."""
+    return run_js(pure_part("index.html", "/* ---- build the table ---- */", "var E = ["), """
 console.log(JSON.stringify(DATA.map(function(d){
   var ion = ionOf(d);
   return {z:d.z, sym:d.sym, name:d.name, period:d.period, group:d.group, block:d.block,
           shells:d.shells, occ:d.occ, ionCharge:ionCharge(d),
           ionShells: ion ? ion.shells : null};
 })));
-"""
-    fd, path = tempfile.mkstemp(suffix=".js")
-    os.write(fd, pure.encode("utf-8")); os.close(fd)
-    try:
-        return json.loads(subprocess.check_output(["node", path]))
-    finally:
-        os.unlink(path)
+""")
+
+
+def orbital_data():
+    """orbitals.html keeps its own copy of the element data; this catches drift."""
+    if not os.path.exists("orbitals.html"):
+        return None
+    return run_js(pure_part("orbitals.html", "/* ---------- orbital shapes ---------- */",
+                            'var E = "H Hydrogen'), """
+console.log(JSON.stringify(E.map(function(e){
+  return {z:e.z, sym:e.sym, name:e.name, occ:e.occ};
+})));
+""")
 
 
 def parse_nist(raw):
@@ -140,6 +159,18 @@ def main():
                 counts["ion"] += 1
             else:
                 fails.append(f"{sym}{charge:+d}: page {e['ionShells']}, NIST {shells(iocc)}")
+
+    orb = orbital_data()
+    if orb is None:
+        print("orbitals.html                        : not present, skipped")
+    else:
+        drift = [f"{a['sym']}: {a['occ']} vs {b['occ']}"
+                 for a, b in zip(app, orb)
+                 if (a["z"], a["sym"], a["name"]) != (b["z"], b["sym"], b["name"])
+                 or {k: v for k, v in a["occ"].items() if v} != {k: v for k, v in b["occ"].items() if v}]
+        if drift:
+            fails += ["orbitals.html differs from index.html -- " + d for d in drift]
+        print(f"orbitals.html agreeing with index.html: {len(orb) - len(drift)} / {len(orb)}")
 
     print(f"neutral configurations matching NIST : {counts['neutral']}")
     print(f"ion configurations matching NIST     : {counts['ion']}")

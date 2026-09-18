@@ -70,8 +70,9 @@
   /* ---------- header ---------- */
   header.top{display:flex; flex-direction:row; align-items:flex-start; gap:16px; margin-bottom:18px;}
   .top-text{display:flex; flex-direction:column; gap:6px; min-width:0;}
+  .top-actions{margin-left:auto; flex:none; display:flex; flex-direction:column; gap:7px; align-items:flex-end;}
   .theme-btn{
-    margin-left:auto; flex:none; cursor:pointer;
+    flex:none; cursor:pointer; text-decoration:none; text-align:center;
     font-family:"IBM Plex Sans",sans-serif; font-size:12.5px; font-weight:600;
     padding:6px 11px; border-radius:5px; border:1px solid var(--line-2);
     background:var(--surface); color:var(--ink-2); line-height:1.2; white-space:nowrap;
@@ -533,7 +534,10 @@
       <h1>Shells &amp; Valence Explorer</h1>
       <p class="lede">Pick any element. Its <b>row</b> tells you how many electron shells to draw; for the main groups, its <b>column</b> tells you how many electrons land in the outermost one.</p>
     </div>
-    <button type="button" id="themeBtn" class="theme-btn">Light mode</button>
+    <div class="top-actions">
+      <button type="button" id="themeBtn" class="theme-btn">Light mode</button>
+      <a class="theme-btn" id="orbLink" href="orbitals.html">Orbital builder →</a>
+    </div>
   </header>
 
   <div class="stage">
@@ -1207,6 +1211,7 @@
     document.getElementById("cfg").textContent = ion ? (ion.cfg || "no electrons") : d.cfg;
 
     draw(d, ion, !!blocked && sharesValence(d));
+    document.getElementById("orbLink").href = "orbitals.html?z=" + z;
     if (scroll && cells[z].scrollIntoView) cells[z].scrollIntoView({block:"nearest", inline:"center"});
   }
 
@@ -1282,7 +1287,8 @@
   });
   paintThemeBtn();
 
-  select(17, false);
+  var startZ = /[?&]z=(\d+)/.exec(location.search);
+  select(startZ ? Math.max(1, Math.min(118, +startZ[1])) : 17, true);
 })();
 </script>
 
