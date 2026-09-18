@@ -137,6 +137,7 @@
   .e-dot{fill:var(--ink-2);}
   .e-dot.val{fill:var(--hl);}
   .e-dot.gained{fill:var(--gain); stroke:var(--gain); stroke-width:3.5; stroke-opacity:.3;}
+  .e-dot.shared{fill:var(--hl); stroke:var(--hl); stroke-width:3; stroke-opacity:.34;}
   .e-dot.lost{
     fill:var(--loss); fill-opacity:.16;
     stroke:var(--loss); stroke-width:1.8; stroke-dasharray:2.4 2; opacity:.9;
@@ -254,6 +255,7 @@
   .gh .gc{font-size:clamp(6.8px,1.12cqi,10px);}
   .gh .gc.pos{color:var(--loss);}
   .gh .gc.neg{color:var(--gain);}
+  .gh .gc.share{color:var(--hl);}
   .corner{
     display:flex; flex-direction:column; align-items:flex-end; justify-content:flex-end;
     gap:1px; padding:0 7px 4px 0; text-align:right;
@@ -656,6 +658,16 @@
   var GROUP_CHARGE = {1:"+1", 2:"+2", 13:"+3", 14:"\u00b14", 15:"\u22123",
                       16:"\u22122", 17:"\u22121", 18:"0"};
   var NOBLE = {2:"helium", 10:"neon", 18:"argon", 36:"krypton", 54:"xenon", 86:"radon"};
+  var GROUP_TITLE = {
+    1:"1 valence e⁻ — loses it to reach +1",
+    2:"2 valence e⁻ — loses both to reach +2",
+    13:"3 valence e⁻ — the metals lose all three to reach +3",
+    14:"4 valence e⁻ — halfway to an octet, so these share rather than transfer, ranging from −4 to +4",
+    15:"5 valence e⁻ — gains 3 to reach −3",
+    16:"6 valence e⁻ — gains 2 to reach −2",
+    17:"7 valence e⁻ — gains 1 to reach −1",
+    18:"A full outer shell already — no common ion"
+  };
 
   function ionCharge(d){
     if (d.z >= 104) return null;                    /* synthetic, not characterised */
@@ -666,12 +678,38 @@
     return g === undefined ? null : g;
   }
 
+  /* these elements form no common simple ion -- but "nothing happens" is the
+     wrong story, so each says what it does instead */
+  var SHARES_FOUR = {6:"carbon build chains and rings",
+                     14:"silicon build the lattices in sand and glass",
+                     32:"germanium sit on the line between metal and non-metal"};
+
   function ionMissing(d){
-    if (d.z >= 104) return "This element is synthetic and too short-lived for its ion chemistry to be settled.";
-    if (d.group === 18) return "Its outer shell is already full, which is exactly why the noble gases sit out of most reactions.";
-    if (d.block === "p" || d.z === 5) return d.name + " shares electrons in covalent bonds rather than forming a simple ion.";
-    return "No single ion is common enough to call typical.";
+    if (d.z >= 104) return {
+      does:"Not established — this element is synthetic.",
+      why:"Only a handful of atoms have ever been made, and they decay far too fast for their ion chemistry to be pinned down."
+    };
+    if (d.group === 18) return {
+      does:"Nothing to gain or lose — the outer shell is already full.",
+      why:"That filled shell is exactly why the noble gases sit out of almost every reaction."
+    };
+    if (d.group === 14) return {
+      does:"Shares its <span class=\"num hl\">4</span> valence e⁻ in four covalent bonds, with oxidation states anywhere from <span class=\"num\">−4</span> to <span class=\"num\">+4</span>.",
+      why:d.name + " sits exactly halfway to an octet: losing 4 e⁻ and gaining 4 e⁻ cost about the same, so it does neither. That even balance is what lets " +
+          (SHARES_FOUR[d.z] || "these elements bond four ways") + "."
+    };
+    if (d.z === 5) return {
+      does:"Shares its <span class=\"num hl\">3</span> valence e⁻ rather than giving them up.",
+      why:"Boron holds its electrons too tightly to form B³⁺ in ordinary chemistry, so it bonds covalently instead — as in BF₃."
+    };
+    return {
+      does:"No single ion is common enough to call typical.",
+      why:"This element forms several, depending on what it reacts with."
+    };
   }
+
+  /* group 14 and boron share their valence electrons instead of transferring */
+  function sharesValence(d){ return d.group === 14 || d.z === 5; }
 
   /* cations lose from the outermost shell inwards; anions fill the outer shell */
   function ionShells(shells, charge){
@@ -746,8 +784,11 @@
     gh.appendChild(el("span","gn",String(g)));
     gh.appendChild(el("span","gv", GROUP_VAL[g] || "varies"));
     var chg = GROUP_CHARGE[g];
-    gh.appendChild(el("span","gc" + (chg ? (chg.charAt(0) === "+" ? " pos" : (chg.charAt(0) === "\u2212" ? " neg" : "")) : ""),
-                      chg || "\u2014"));
+    var chgCls = g === 14 ? " share" : (chg && chg.charAt(0) === "+" ? " pos"
+               : (chg && chg.charAt(0) === "\u2212" ? " neg" : ""));
+    gh.appendChild(el("span","gc" + chgCls, chg || "\u2014"));
+    gh.title = GROUP_TITLE[g] ||
+      "Transition metals form several different ions — most often +2 or +3";
     frag.appendChild(gh);
   }
 
@@ -836,7 +877,7 @@
 
   /* ion === null draws the neutral atom; otherwise rings keep their neutral
      radii so an emptied shell stays visible as a ghost of what was there */
-  function draw(d, ion){
+  function draw(d, ion, sharing){
     while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild);
     var cx = 170, cy = 170;
     var target = ion ? ion.shells : d.shells;
@@ -864,7 +905,7 @@
         for (var j = 0; j < shown; j++){
           var a = (start + j * 360 / shown) * Math.PI / 180;
           var cls = "e-dot";
-          if (j < kept) cls += isOuter ? " val" : "";
+          if (j < kept) cls += isOuter ? (sharing ? " val shared" : " val") : "";
           else if (j < now) cls += " gained";
           else cls += " lost";
           g.appendChild(svgEl("circle",{
@@ -964,15 +1005,14 @@
     document.getElementById("elMeta").textContent =
       "Period " + d.period + " · " + (d.group ? "Group " + d.group : (d.z < 89 ? "Lanthanide" : "Actinide")) + " · " + d.block + "-block";
 
-    document.getElementById("kShells").textContent = ionMode ? "What changes" : "Row → shells";
+    document.getElementById("kShells").textContent =
+      ionMode ? (blocked ? "Instead of an ion" : "What changes") : "Row → shells";
     document.getElementById("kVal").textContent =
-      ionMode ? (blocked ? "Why not" : "Result — the octet rule") : "Column → valence electrons";
+      ionMode ? (blocked ? "Why" : "Result — the octet rule") : "Column → valence electrons";
 
     if (ionMode){
-      document.getElementById("rShells").innerHTML = blocked
-        ? "Nothing changes — " + d.name + " has no common simple ion."
-        : changeText(d, ion);
-      document.getElementById("rVal").innerHTML = blocked ? blocked : resultText(d, ion);
+      document.getElementById("rShells").innerHTML = blocked ? blocked.does : changeText(d, ion);
+      document.getElementById("rVal").innerHTML = blocked ? blocked.why : resultText(d, ion);
     } else {
       document.getElementById("rShells").innerHTML =
         "Row <span class=\"num\">" + d.period + "</span> of the table → <span class=\"num\">" + k +
@@ -1016,7 +1056,9 @@
     }
 
     var noteHTML;
-    if (blocked) noteHTML = BLOCK_NOTE[d.block];
+    if (blocked) noteHTML = sharesValence(d)
+      ? "The valence electrons are ringed in amber: they stay on the atom and are shared into bonds, not handed over."
+      : BLOCK_NOTE[d.block];
     else if (ion) noteHTML = (ion.charge > 0
       ? "The emptied shell leaves the filled shell beneath as the new surface, so a positive ion is smaller than its atom."
       : "The extra electrons crowd the outer shell, so a negative ion is larger than its atom.")
@@ -1027,7 +1069,7 @@
     document.getElementById("cfgLbl").textContent = ion ? "Ion configuration" : "Electron configuration";
     document.getElementById("cfg").textContent = ion ? (ion.cfg || "no electrons") : d.cfg;
 
-    draw(d, ion);
+    draw(d, ion, !!blocked && sharesValence(d));
     if (scroll && cells[z].scrollIntoView) cells[z].scrollIntoView({block:"nearest", inline:"center"});
   }
 
