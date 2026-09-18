@@ -611,7 +611,11 @@
       + "it simply thins out, which is why some dots sit outside the frame. "
       + (nodes > 0
           ? "The gap inside is a <b>node</b>: " + (nodes === 1 ? "a shell" : nodes + " shells")
-            + " where the electron is never found."
+            + " where the electron is never found. "
+          : "")
+      + (shapes.length > 1
+          ? "Notice that all " + shapes.length + " together add up to a <b>sphere</b> — a filled "
+            + "sub-shell points in no particular direction, which is why a noble gas is round."
           : "Drag it to turn it around.");
     drawCloud();
   }

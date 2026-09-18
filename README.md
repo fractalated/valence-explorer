@@ -71,9 +71,33 @@ Other behavior:
   keeps its canonical shape in a horizontal scroller below. Landscape shows more of the
   table at once.
 
+## The orbital builder
+
+`orbitals.html` is a companion page for the step from Bohr's particle-on-a-ring to the
+quantum picture. Electrons are added one at a time and the orbitals fill in front of you.
+
+- **Shapes are probability clouds, not solid lobes.** Each dot is sampled from the real
+  hydrogen wavefunction: the radius is drawn from r²R(r)² and the direction from Y², which
+  together are exactly |ψ|². The familiar sphere, dumbbell and cloverleaf appear — but made
+  of scattered positions, with dots trailing off past the frame because the cloud has no
+  edge. The caption says outright that the dots are not electrons.
+- Because it is the real wavefunction, **radial nodes show up honestly**: 2s is hollow
+  inside, and the caption names the node count.
+- Lobe colour follows the **sign of the wavefunction**, so a p orbital's two halves are
+  visibly opposite.
+- Each orbital opens at an angle chosen to show its shape side-on, and can be **dragged to
+  turn**. Viewing a dumbbell down its own axis makes it a blob, which is what a single
+  fixed camera would have given.
+- The filling diagram shows **Hund's rule and Pauli pairing** as up and down arrows, and a
+  line of text says which rule the newest electron just obeyed.
+- **Build up** plays the whole element one electron at a time.
+- s, p and d have shapes; f orbitals appear in the diagram but are not drawn.
+
+The two pages link to each other carrying the selected element, and share the theme choice.
+
 ## Accuracy notes
 
-Every element's data is checked against primary sources by `verify.py`, which downloads
+Both pages' element data is checked against primary sources by `verify.py`, which downloads
 them fresh and compares against the page's own code. Run `python3 verify.py` (needs
 python3, node and a network connection). Current result:
 
