@@ -447,7 +447,9 @@
     .note{font-size:12.5px; padding-bottom:9px;}
     .diagram-box{min-height:120px;}
     .shells{padding:6px 16px 8px;}
-    .shell-row{padding:1px 0;}
+    .shell-row{padding:0;}
+    .shells{padding:5px 16px 7px;}
+    .config{padding:5px 16px 9px;}
     .note{padding:0 16px 10px;}
     .config{padding:7px 16px 10px;}
     .controls{padding:8px 16px;}
@@ -1060,8 +1062,8 @@
       ? "The valence electrons are ringed in amber: they stay on the atom and are shared into bonds, not handed over."
       : BLOCK_NOTE[d.block];
     else if (ion) noteHTML = (ion.charge > 0
-      ? "The emptied shell leaves the filled shell beneath as the new surface, so a positive ion is smaller than its atom."
-      : "The extra electrons crowd the outer shell, so a negative ion is larger than its atom.")
+      ? "A positive ion is smaller than its atom: the emptied shell leaves the filled one beneath as the new surface."
+      : "A negative ion is larger than its atom: the extra electrons crowd the outer shell.")
       + (ION_ALT[d.z] ? " " + d.name + " also commonly forms " + ION_ALT[d.z] + "." : "");
     else noteHTML = BLOCK_NOTE[d.block];
     document.getElementById("note").innerHTML = noteHTML;
