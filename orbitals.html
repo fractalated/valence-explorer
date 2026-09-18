@@ -435,7 +435,7 @@
     var rr = [];
     for (var i = 0; i < got; i++) rr.push(Math.hypot(pts[i*4], pts[i*4+1], pts[i*4+2]));
     rr.sort(function(a, b){ return a - b; });
-    var out = {pts:pts, count:got, extent:(rr[Math.floor(got * 0.97)] || 1)};
+    var out = {pts:pts, count:got, extent:(rr[Math.floor(got * 0.85)] || 1)};
     cloudCache[ck] = out;
     return out;
   }
@@ -576,12 +576,14 @@
       ? sub + " <span style='color:var(--ink-3);font-weight:500'>(all " + shapes.length + ")</span>"
       : view.n + PLAIN[view.shape];
     var nodes = view.n - view.l - 1;
-    cap.innerHTML = "Every dot is a place this electron could be found, sampled from the real "
-      + "hydrogen wavefunction — <b>not</b> " + shapes.length + " electrons, and <b>not</b> a surface. "
+    cap.innerHTML = "Each dot marks somewhere an electron in "
+      + (shapes.length > 1 ? "these orbitals" : "this orbital") + " could turn up, sampled from the real "
+      + "hydrogen wavefunction. <b>The dots are not electrons</b>, and the cloud has no surface — "
+      + "it simply thins out, which is why some dots sit outside the frame. "
       + (nodes > 0
           ? "The gap inside is a <b>node</b>: " + (nodes === 1 ? "a shell" : nodes + " shells")
             + " where the electron is never found."
-          : "Drag to turn it.");
+          : "Drag it to turn it around.");
     drawCloud();
   }
 
@@ -598,7 +600,7 @@
 
   function render(){
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    var cssW = canvas.clientWidth || 700, cssH = Math.round(cssW * 0.72);
+    var cssW = canvas.clientWidth || 700, cssH = Math.round(Math.min(cssW * 0.62, 430));
     if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)){
       canvas.width = Math.round(cssW * dpr);
       canvas.height = Math.round(cssH * dpr);
@@ -614,21 +616,23 @@
 
     var extent = 0;
     clouds.forEach(function(c){ extent = Math.max(extent, c.extent); });
-    var scale = Math.min(w, h) * 0.42 / extent;
+    var scale = Math.min(w, h) * 0.40 / extent;
     var cx = w / 2, cy = h / 2;
 
-    var cy_ = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
-    var all = [], ci, c, i, x, y, z, X, Y, Z, o;
+    var ca = Math.cos(yaw), sa = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+    /* spin about the model z axis, then tilt -- so z ends up vertical on screen */
+    function project(x, y, z){
+      var x1 = x * ca - y * sa, y1 = x * sa + y * ca;
+      return [x1, z * cp - y1 * sp, z * sp + y1 * cp];
+    }
+    drawAxes(project, cx, cy, scale, w, h);
+    var all = [], ci, c, i, o, pr;
     for (ci = 0; ci < clouds.length; ci++){
       c = clouds[ci];
       for (i = 0; i < c.count; i++){
         o = i * 4;
-        x = c.pts[o]; y = c.pts[o+1]; z = c.pts[o+2];
-        X = x * cy_ + z * sy;
-        Z = -x * sy + z * cy_;
-        Y = y * cp - Z * sp;
-        Z = y * sp + Z * cp;
-        all.push([X, Y, Z, c.pts[o+3]]);
+        pr = project(c.pts[o], c.pts[o+1], c.pts[o+2]);
+        all.push([pr[0], pr[1], pr[2], c.pts[o+3]]);
       }
     }
     all.sort(function(a, b){ return a[2] - b[2]; });
@@ -642,6 +646,30 @@
       var sz = dot * (0.7 + depth * 0.7);
       ctx.fillRect(cx + p[0] * scale - sz / 2, cy - p[1] * scale - sz / 2, sz, sz);
     }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawAxes(project, cx, cy, scale, w, h){
+    var cs = getComputedStyle(document.documentElement);
+    var line = cs.getPropertyValue("--line-2").trim() || "#999";
+    var ink = cs.getPropertyValue("--ink-3").trim() || "#888";
+    var len = Math.min(w, h) * 0.44 / scale;
+    var axes = [[len,0,0,"x"], [0,len,0,"y"], [0,0,len,"z"]];
+    ctx.save();
+    ctx.lineWidth = Math.max(1, scale * 0.012);
+    ctx.font = (13 * Math.min(window.devicePixelRatio || 1, 2)) + "px 'IBM Plex Mono', monospace";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    axes.forEach(function(a){
+      var p = project(a[0], a[1], a[2]), m = project(-a[0], -a[1], -a[2]);
+      ctx.globalAlpha = 0.5; ctx.strokeStyle = line;
+      ctx.beginPath();
+      ctx.moveTo(cx + m[0] * scale, cy - m[1] * scale);
+      ctx.lineTo(cx + p[0] * scale, cy - p[1] * scale);
+      ctx.stroke();
+      ctx.globalAlpha = 0.85; ctx.fillStyle = ink;
+      ctx.fillText(a[3], cx + p[0] * scale * 1.07, cy - p[1] * scale * 1.07);
+    });
+    ctx.restore();
     ctx.globalAlpha = 1;
   }
 
