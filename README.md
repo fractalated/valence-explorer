@@ -132,4 +132,16 @@ Bohr drawing code are all in the single `<script>` block at the bottom.
 ## Deployment
 
 GitHub Pages serves `index.html` from the `main` branch root. Pushing to `main`
-republishes the site.
+republishes the site, usually within a minute or two.
+
+The empty `.nojekyll` file tells Pages to skip Jekyll and publish the files as they are.
+Nothing here needs processing — it is one self-contained HTML page — and skipping that
+step removes a build stage that can fail. It has failed once: a push reported
+`Page build failed` with no detail and the site quietly kept serving the previous
+version. If a change doesn't appear, check the build rather than assuming a cache:
+
+```bash
+gh api repos/fractalated/valence-explorer/pages/builds/latest --jq '{status, commit, error}'
+```
+
+A failed build can be retried with `gh api -X POST repos/fractalated/valence-explorer/pages/builds`.
