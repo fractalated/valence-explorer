@@ -1098,13 +1098,17 @@
 
     var protons = d.z, electrons = ion ? d.z - ion.charge : d.z;
     var bmax = Math.max(protons, electrons), both = Math.min(protons, electrons);
-    function pct(n){ return (n / bmax * 100) + "%"; }
-    document.getElementById("barP").style.width = pct(both);
-    document.getElementById("barPx").style.width = pct(Math.max(0, protons - electrons));
-    document.getElementById("barPg").style.width = pct(Math.max(0, electrons - protons));
-    document.getElementById("barE").style.width = pct(both);
-    document.getElementById("barEx").style.width = pct(Math.max(0, electrons - protons));
-    document.getElementById("barEg").style.width = pct(Math.max(0, protons - electrons));
+    function seg(id, n){                     /* a zero-width ghost would still paint its border */
+      var node = document.getElementById(id);
+      node.style.width = (n / bmax * 100) + "%";
+      node.hidden = n === 0;
+    }
+    seg("barP", both);
+    seg("barPx", Math.max(0, protons - electrons));
+    seg("barPg", Math.max(0, electrons - protons));
+    seg("barE", both);
+    seg("barEx", Math.max(0, electrons - protons));
+    seg("barEg", Math.max(0, protons - electrons));
     document.getElementById("valP").textContent = protons;
     document.getElementById("valE").textContent = electrons;
     var net = protons - electrons;
