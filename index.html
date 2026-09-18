@@ -21,6 +21,7 @@
 <title>Shells &amp; Valence Explorer</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
+  :root[data-theme="light"]{color-scheme:light;}
   :root{
     --bg:#eceee9; --surface:#fbfcfa; --surface-2:#f2f4f0;
     --ink:#171c19; --ink-2:#4c574f; --ink-3:#66706a;
@@ -46,6 +47,7 @@
     }
   }
   :root[data-theme="dark"]{
+    color-scheme:dark;
     --bg:#12161a; --surface:#1a1f24; --surface-2:#20262c;
     --ink:#e8ece9; --ink-2:#adb8b2; --ink-3:#8e9992;
     --line:#2b3238; --line-2:#3a434a;
@@ -66,7 +68,16 @@
   .wrap{max-width:1280px; margin:0 auto; padding-inline:16px; padding-block:22px 40px;}
 
   /* ---------- header ---------- */
-  header.top{display:flex; flex-direction:column; gap:6px; margin-bottom:18px;}
+  header.top{display:flex; flex-direction:row; align-items:flex-start; gap:16px; margin-bottom:18px;}
+  .top-text{display:flex; flex-direction:column; gap:6px; min-width:0;}
+  .theme-btn{
+    margin-left:auto; flex:none; cursor:pointer;
+    font-family:"IBM Plex Sans",sans-serif; font-size:12.5px; font-weight:600;
+    padding:6px 11px; border-radius:5px; border:1px solid var(--line-2);
+    background:var(--surface); color:var(--ink-2); line-height:1.2; white-space:nowrap;
+  }
+  .theme-btn:hover{border-color:var(--ink-3); color:var(--ink);}
+  .theme-btn:focus-visible{outline:2px solid var(--hl); outline-offset:1px;}
   .eyebrow{
     font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; font-weight:500;
     letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
@@ -485,7 +496,8 @@
     .wrap{padding-block:14px;}
     h1{font-size:29px;}
     .lede{font-size:14px;}
-    header.top{gap:3px; margin-bottom:10px;}
+    header.top{margin-bottom:10px;}
+    .top-text{gap:3px;}
     .findbar{margin-bottom:8px;}
     .cell .nm{display:none;}
     .cell{min-height:clamp(28px,4.6cqi,40px);}
@@ -506,9 +518,12 @@
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="eyebrow">Bohr shells · periods 1–7</div>
-    <h1>Shells &amp; Valence Explorer</h1>
-    <p class="lede">Pick any element. Its <b>row</b> tells you how many electron shells to draw; for the main groups, its <b>column</b> tells you how many electrons land in the outermost one.</p>
+    <div class="top-text">
+      <div class="eyebrow">Bohr shells · periods 1–7</div>
+      <h1>Shells &amp; Valence Explorer</h1>
+      <p class="lede">Pick any element. Its <b>row</b> tells you how many electron shells to draw; for the main groups, its <b>column</b> tells you how many electrons land in the outermost one.</p>
+    </div>
+    <button type="button" id="themeBtn" class="theme-btn">Dark</button>
   </header>
 
   <div class="stage">
@@ -1211,6 +1226,35 @@
   if (wide.addEventListener) wide.addEventListener("change", syncMore);
   else if (wide.addListener) wide.addListener(syncMore);
   syncMore();
+
+  /* the page follows the system appearance until someone chooses here */
+  var root = document.documentElement;
+  var themeBtn = document.getElementById("themeBtn");
+  var sysDark = window.matchMedia("(prefers-color-scheme: dark)");
+
+  function isDark(){
+    var set = root.getAttribute("data-theme");
+    return set ? set === "dark" : sysDark.matches;
+  }
+  function paintThemeBtn(){
+    var dark = isDark();
+    themeBtn.textContent = dark ? "Light" : "Dark";
+    themeBtn.title = dark ? "Switch to the light theme" : "Switch to the dark theme";
+    themeBtn.setAttribute("aria-label", themeBtn.title);
+  }
+  themeBtn.addEventListener("click", function(){
+    var next = isDark() ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("ve-theme", next); } catch (e) {}
+    paintThemeBtn();
+  });
+  try {
+    var saved = localStorage.getItem("ve-theme");
+    if (saved === "light" || saved === "dark") root.setAttribute("data-theme", saved);
+  } catch (e) {}
+  if (sysDark.addEventListener) sysDark.addEventListener("change", paintThemeBtn);
+  else if (sysDark.addListener) sysDark.addListener(paintThemeBtn);
+  paintThemeBtn();
 
   select(17, false);
 })();
