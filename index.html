@@ -27,6 +27,7 @@
     --line:#d3d8d2; --line-2:#bcc3bb;
     --s:#1d6f86; --p:#a8552b; --d:#4f6b3a; --f:#7a4a74;
     --hl:#b9791a; --hl-soft:#e8d3a4;
+    --gain:#2f7d4f; --loss:#b0452c;
     --nuc:#2d3733;
     --shadow:0 1px 2px rgba(23,28,25,.06), 0 8px 24px -16px rgba(23,28,25,.25);
   }
@@ -37,6 +38,7 @@
       --line:#2b3238; --line-2:#3a434a;
       --s:#6fc0d8; --p:#e0946a; --d:#9dc47c; --f:#c99bc4;
       --hl:#f0c14b; --hl-soft:#4a3d1c;
+      --gain:#7fcb98; --loss:#e8907a;
       --nuc:#cdd6d1;
       --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
     }
@@ -47,6 +49,7 @@
     --line:#2b3238; --line-2:#3a434a;
     --s:#6fc0d8; --p:#e0946a; --d:#9dc47c; --f:#c99bc4;
     --hl:#f0c14b; --hl-soft:#4a3d1c;
+    --gain:#7fcb98; --loss:#e8907a;
     --nuc:#cdd6d1;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
   }
@@ -112,10 +115,34 @@
   .diagram{display:block; width:100%; height:auto; max-width:100%; background:transparent;}
   .diagram-box{padding:6px 10px 0;}
 
+  .modes{
+    display:flex; margin:10px 16px 0; border:1px solid var(--line-2);
+    border-radius:5px; overflow:hidden;
+  }
+  .modes button{
+    flex:1 1 0; min-width:0; border:0; background:transparent; cursor:pointer;
+    font-family:"IBM Plex Sans",sans-serif; font-size:12.5px; font-weight:600;
+    padding:7px 6px; line-height:1.2; color:var(--ink-2);
+  }
+  .modes button + button{border-left:1px solid var(--line-2);}
+  .modes button[aria-pressed="true"]{
+    background:var(--surface-2);
+    background:color-mix(in oklab, var(--blk,var(--ink-3)) 20%, var(--surface));
+    color:var(--ink);
+  }
+  .modes button:focus-visible{outline:2px solid var(--hl); outline-offset:-2px;}
+
   .ring-line{fill:none; stroke:var(--line-2); stroke-width:1;}
   .ring-line.outer{stroke:var(--hl); stroke-width:1.4;}
   .e-dot{fill:var(--ink-2);}
   .e-dot.val{fill:var(--hl);}
+  .e-dot.gained{fill:var(--gain); stroke:var(--gain); stroke-width:3.5; stroke-opacity:.3;}
+  .e-dot.lost{fill:none; stroke:var(--loss); stroke-width:1.4; stroke-dasharray:2.2 2; opacity:.8;}
+  .ring-line.ghost{stroke:var(--loss); stroke-dasharray:4 5; opacity:.5;}
+  @media (prefers-reduced-motion:no-preference){
+    .e-dot.gained{transform-box:fill-box; transform-origin:center; animation:pop .5s ease-out;}
+  }
+  @keyframes pop{from{transform:scale(.15); opacity:0;} to{transform:scale(1); opacity:1;}}
   .nuc{fill:var(--nuc);}
   .nuc-t{
     fill:var(--surface); font-family:"IBM Plex Mono",ui-monospace,monospace;
@@ -149,10 +176,13 @@
     font-family:"IBM Plex Mono",ui-monospace,monospace; font-weight:600; color:var(--ink);
   }
   .rule-v .num.hl{color:var(--hl);}
+  .rule-v .num.gain{color:var(--gain);}
+  .rule-v .num.loss{color:var(--loss);}
+  .shell-row.is-gone .shell-tag{color:var(--loss);}
 
   .shells{padding:10px 16px 14px; border-bottom:1px solid var(--line);}
   .shell-row{
-    display:grid; grid-template-columns:2.6em 1fr auto auto; gap:10px; align-items:center;
+    display:grid; grid-template-columns:2.6em 1fr auto auto auto; gap:10px; align-items:center;
     font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:13.5px;
     padding:4px 0; color:var(--ink-2);
   }
@@ -164,6 +194,11 @@
     font-family:"IBM Plex Sans",sans-serif; font-size:10px; letter-spacing:.08em;
     text-transform:uppercase; color:var(--hl); font-weight:600;
   }
+  .shell-row .delta{font-weight:600; font-variant-numeric:tabular-nums;}
+  .shell-row .delta.up{color:var(--gain);}
+  .shell-row .delta.down{color:var(--loss);}
+  .shell-row.is-gone{opacity:.6;}
+  .shell-row.is-gone .bar{background:var(--loss); opacity:.35;}
   .config{
     padding:10px 16px 14px; font-family:"IBM Plex Mono",ui-monospace,monospace;
     font-size:12.5px; color:var(--ink-2); overflow-x:auto; white-space:nowrap;
@@ -212,6 +247,10 @@
   .gh .gn{font-size:clamp(9px,1.55cqi,13.5px);}
   .gh .gv{font-size:10.5px; letter-spacing:.02em; color:var(--ink-2);}
   .gh .gv{font-size:clamp(7px,1.2cqi,10.5px);}
+  .gh .gc{font-size:10px; font-weight:600; letter-spacing:.02em; color:var(--ink-3);}
+  .gh .gc{font-size:clamp(6.8px,1.12cqi,10px);}
+  .gh .gc.pos{color:var(--loss);}
+  .gh .gc.neg{color:var(--gain);}
   .corner{
     display:flex; flex-direction:column; align-items:flex-end; justify-content:flex-end;
     gap:1px; padding:0 7px 4px 0; text-align:right;
@@ -221,6 +260,10 @@
     font-size:10px; font-size:clamp(6.5px,1.15cqi,10px);
     font-weight:600; letter-spacing:.09em; text-transform:uppercase;
     color:var(--ink-2); white-space:nowrap;
+  }
+  .corner .ax-sub{
+    font-size:9.5px; font-size:clamp(6.2px,1.08cqi,9.5px);
+    color:var(--ink-3); white-space:nowrap; line-height:1.25;
   }
   .gh.hi .gn, .gh.hi .gv{color:var(--hl);}
   .ph{
@@ -337,8 +380,9 @@
   @media (max-width:999px){
     .panel{display:grid; grid-template-columns:minmax(118px,38%) minmax(0,1fr); align-items:start;}
     .panel-head{grid-column:1 / -1;}
-    .diagram-box{grid-column:1; grid-row:2; padding:10px 0 10px 8px;}
-    .rules{grid-column:2; grid-row:2; border-top:0; align-self:center; min-width:0;}
+    .modes{grid-column:1 / -1; grid-row:2; margin:10px 16px 0;}
+    .diagram-box{grid-column:1; grid-row:3; padding:10px 0 10px 8px;}
+    .rules{grid-column:2; grid-row:3; border-top:0; align-self:center; min-width:0;}
     .rules .rule-v{overflow-wrap:break-word;}
     .rules .rule{padding:8px 14px;}
     .more{min-width:0;}
@@ -360,9 +404,11 @@
     .cell .sym{font-size:15.5px;}
     .gh .gn{font-size:13.5px;}
     .gh .gv{font-size:10.5px;}
+    .gh .gc{font-size:10px;}
     .ph .pn{font-size:11.5px;}
     .ph .ps{font-size:10px;}
     .corner .ax{font-size:10px;}
+    .corner .ax-sub{font-size:9px;}
     .fgap{font-size:10px; min-height:48px;}
     .frow-label{font-size:10.5px;}
     .lede{font-size:14px;}
@@ -381,7 +427,7 @@
       position:static; height:100%; min-height:0;
       display:flex; flex-direction:column; overflow:hidden auto;
     }
-    .panel-head, .rules, .more, .controls{flex:none;}
+    .panel-head, .modes, .rules, .more, .controls{flex:none;}
     .diagram-box{
       flex:1 1 auto; min-height:130px; padding:8px 12px;
       display:flex; align-items:center; justify-content:center;
@@ -391,7 +437,7 @@
     .panel-head{padding:12px 16px 10px;}
     .rule{padding:7px 16px; gap:2px 10px;}
     .shells{padding:6px 16px 8px;}
-    .shell-row{padding:2px 0;}
+    .shell-row{padding:1px 0;}
     .note{padding:0 16px 10px;}
     .config{padding:7px 16px 10px;}
     .controls{padding:8px 16px;}
@@ -454,6 +500,11 @@
         </div>
       </div>
 
+      <div class="modes" role="group" aria-label="Atom view">
+        <button type="button" id="modeNeutral" aria-pressed="true">Neutral atom</button>
+        <button type="button" id="modeIon" aria-pressed="false">Common ion</button>
+      </div>
+
       <div class="diagram-box">
         <svg class="diagram spinning" id="svg" viewBox="0 0 340 340" role="img" aria-labelledby="svgTitle">
           <title id="svgTitle">Bohr diagram</title>
@@ -462,11 +513,11 @@
 
       <div class="rules">
         <div class="rule">
-          <span class="rule-k">Row → shells</span>
+          <span class="rule-k" id="kShells">Row → shells</span>
           <span class="rule-v" id="rShells"></span>
         </div>
         <div class="rule">
-          <span class="rule-k">Column → valence electrons</span>
+          <span class="rule-k" id="kVal">Column → valence electrons</span>
           <span class="rule-v" id="rVal"></span>
         </div>
       </div>
@@ -475,7 +526,7 @@
         <summary>Shell counts &amp; configuration</summary>
         <div class="shells" id="shellList"></div>
         <p class="note" id="note"></p>
-        <div class="config"><span class="lbl">Electron configuration</span><span id="cfg"></span></div>
+        <div class="config"><span class="lbl" id="cfgLbl">Electron configuration</span><span id="cfg"></span></div>
       </details>
 
       <div class="controls">
@@ -568,14 +619,107 @@
     });
     while (shells.length && shells[shells.length-1] === 0) shells.pop();
     var parts = ORDER.filter(function(k){return occ[k];}).map(function(k){return k+sup(occ[k]);});
-    return {shells:shells, text:parts.join(" ")};
+    return {shells:shells, text:parts.join(" "), occ:occ};
   }
 
   var DATA = E.map(function(r){
     var c = configure(r[0]);
     return {z:r[0], sym:r[1], name:r[2], period:r[3], group:r[4], block:r[5],
-            shells:c.shells, cfg:c.text};
+            shells:c.shells, cfg:c.text, occ:c.occ};
   });
+
+  /* ---- most common ion, by group with per-element corrections ----
+     Groups 14 and 18 have no entry: those elements share electrons or are
+     already full. The d- and f-block values are the charge most often met in
+     an introductory course, not the only one each element forms. */
+  var GROUP_ION = {1:1, 2:2, 13:3, 15:-3, 16:-2, 17:-1};
+  var ION_Z = {
+    1:1, 2:null, 5:null, 6:null, 14:null, 32:null, 33:-3,
+    21:3, 22:4, 23:5, 24:3, 25:2, 26:3, 27:2, 28:2, 29:2, 30:2,
+    39:3, 40:4, 41:5, 42:6, 43:7, 44:3, 45:3, 46:2, 47:1, 48:2,
+    50:2, 51:3,
+    72:4, 73:5, 74:6, 75:7, 76:4, 77:3, 78:2, 79:3, 80:2,
+    81:1, 82:2, 83:3, 84:2, 85:-1,
+    90:4, 91:5, 92:6, 93:5, 94:4
+  };
+  /* other charges these elements commonly form, shown alongside */
+  var ION_ALT = {24:"+6", 25:"+4, +7", 26:"+2", 27:"+3", 29:"+1", 50:"+4",
+                 79:"+1", 81:"+3", 82:"+4", 92:"+4"};
+  var GROUP_CHARGE = {1:"+1", 2:"+2", 13:"+3", 14:"\u00b14", 15:"\u22123",
+                      16:"\u22122", 17:"\u22121", 18:"0"};
+  var NOBLE = {2:"helium", 10:"neon", 18:"argon", 36:"krypton", 54:"xenon", 86:"radon"};
+
+  function ionCharge(d){
+    if (d.z >= 104) return null;                    /* synthetic, not characterised */
+    if (Object.prototype.hasOwnProperty.call(ION_Z, d.z)) return ION_Z[d.z];
+    if (d.block === "f") return 3;
+    if (d.block === "d") return null;
+    var g = GROUP_ION[d.group];
+    return g === undefined ? null : g;
+  }
+
+  function ionMissing(d){
+    if (d.z >= 104) return "This element is synthetic and too short-lived for its ion chemistry to be settled.";
+    if (d.group === 18) return "Its outer shell is already full, which is exactly why the noble gases sit out of most reactions.";
+    if (d.block === "p" || d.z === 5) return d.name + " shares electrons in covalent bonds rather than forming a simple ion.";
+    return "No single ion is common enough to call typical.";
+  }
+
+  /* cations lose from the outermost shell inwards; anions fill the outer shell */
+  function ionShells(shells, charge){
+    var out = shells.slice(), left;
+    if (charge > 0){
+      left = charge;
+      for (var i = out.length - 1; i >= 0 && left > 0; i--){
+        var take = Math.min(out[i], left);
+        out[i] -= take; left -= take;
+      }
+      while (out.length && out[out.length - 1] === 0) out.pop();
+    } else if (charge < 0){
+      out[out.length - 1] += -charge;
+    }
+    return out;
+  }
+
+  /* electrons leave the highest n first, and the highest sub-shell within it,
+     so Fe loses 4s before 3d and Pb loses 6p before 6s */
+  function ionConfig(occ, charge){
+    var o = {}, k;
+    for (k in occ) o[k] = occ[k];
+    if (charge > 0){
+      var order = ORDER.slice().sort(function(a, b){
+        if (a[0] !== b[0]) return +b[0] - +a[0];
+        return "spdf".indexOf(b[1]) - "spdf".indexOf(a[1]);
+      });
+      var left = charge;
+      for (var i = 0; i < order.length && left > 0; i++){
+        var have = o[order[i]] || 0, take = Math.min(have, left);
+        if (take){ o[order[i]] = have - take; left -= take; }
+      }
+    } else if (charge < 0){
+      var maxN = 0;
+      ORDER.forEach(function(key){ if (o[key]) maxN = Math.max(maxN, +key[0]); });
+      var room = ORDER.filter(function(key){ return +key[0] === maxN; });
+      var add = -charge;
+      for (var j = 0; j < room.length && add > 0; j++){
+        var cap = CAP[room[j][1]], has = o[room[j]] || 0, fit = Math.min(cap - has, add);
+        if (fit){ o[room[j]] = has + fit; add -= fit; }
+      }
+    }
+    return ORDER.filter(function(key){ return o[key]; })
+                .map(function(key){ return key + sup(o[key]); }).join(" ");
+  }
+
+  function ionOf(d){
+    var c = ionCharge(d);
+    if (!c) return null;
+    return {charge:c, shells:ionShells(d.shells, c), cfg:ionConfig(d.occ, c)};
+  }
+
+  function chargeSup(c){
+    var n = Math.abs(c);
+    return (n === 1 ? "" : sup(n)) + (c > 0 ? "\u207a" : "\u207b");
+  }
 
   /* ---- build the table ---- */
   var GROUP_VAL = {1:"1 e⁻",2:"2 e⁻",13:"3 e⁻",14:"4 e⁻",15:"5 e⁻",
@@ -583,14 +727,19 @@
   var pt = document.getElementById("pt");
   var frag = document.createDocumentFragment();
 
-  var corner = el("div","corner","");              /* labels the axis to its right */
+  var corner = el("div","corner","");              /* labels the three header lines */
   corner.appendChild(el("span","ax","Groups →"));
+  corner.appendChild(el("span","ax-sub","valence"));
+  corner.appendChild(el("span","ax-sub","ion charge"));
   frag.appendChild(corner);
   for (var g=1; g<=18; g++){
     var gh = el("div","gh","");
     gh.id = "gh"+g;
     gh.appendChild(el("span","gn",String(g)));
     gh.appendChild(el("span","gv", GROUP_VAL[g] || "varies"));
+    var chg = GROUP_CHARGE[g];
+    gh.appendChild(el("span","gc" + (chg ? (chg.charAt(0) === "+" ? " pos" : (chg.charAt(0) === "\u2212" ? " neg" : "")) : ""),
+                      chg || "\u2014"));
     frag.appendChild(gh);
   }
 
@@ -669,6 +818,7 @@
   var SVGNS = "http://www.w3.org/2000/svg";
   var svg = document.getElementById("svg");
   var cur = 17;
+  var ionMode = false;
 
   function svgEl(tag, attrs){
     var n = document.createElementNS(SVGNS, tag);
@@ -676,38 +826,53 @@
     return n;
   }
 
-  function draw(d){
+  /* ion === null draws the neutral atom; otherwise rings keep their neutral
+     radii so an emptied shell stays visible as a ghost of what was there */
+  function draw(d, ion){
     while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild);
-    var cx = 170, cy = 170, k = d.shells.length;
+    var cx = 170, cy = 170;
+    var target = ion ? ion.shells : d.shells;
+    var rings = Math.max(d.shells.length, target.length);
+    var outerIdx = target.length - 1;
     var first = 52, last = 156;
-    var step = k > 1 ? (last - first) / (k - 1) : 0;
+    var step = rings > 1 ? (last - first) / (rings - 1) : 0;
 
-    d.shells.forEach(function(count, i){
+    for (var i = 0; i < rings; i++){
       var r = first + i * step;
-      var isOuter = (i === k - 1);
+      var was = d.shells[i] || 0, now = target[i] || 0;
+      var isOuter = (i === outerIdx);
+      var emptied = now === 0 && was > 0;
       svg.appendChild(svgEl("circle",{cx:cx, cy:cy, r:r.toFixed(1),
-        "class":"ring-line" + (isOuter ? " outer" : "")}));
+        "class":"ring-line" + (isOuter ? " outer" : "") + (emptied ? " ghost" : "")}));
 
-      var g = svgEl("g",{"class":"spin"});
-      g.style.setProperty("--dur", (34 + i * 13) + "s");
-      if (i % 2) g.style.animationDirection = "reverse";
-      var dot = count > 18 ? 3.1 : (count > 8 ? 4 : 5);
-      var start = -90 + 180 / count;
-      for (var j=0; j<count; j++){
-        var a = (start + j * 360 / count) * Math.PI / 180;
-        g.appendChild(svgEl("circle",{
-          cx:(cx + r * Math.cos(a)).toFixed(1), cy:(cy + r * Math.sin(a)).toFixed(1),
-          r:dot, "class":"e-dot" + (isOuter ? " val" : "")
-        }));
+      var shown = Math.max(was, now);
+      if (shown){
+        var g = svgEl("g",{"class":"spin"});
+        g.style.setProperty("--dur", (34 + i * 13) + "s");
+        if (i % 2) g.style.animationDirection = "reverse";
+        var dot = shown > 18 ? 3.1 : (shown > 8 ? 4 : 5);
+        var start = -90 + 180 / shown;
+        var kept = Math.min(was, now);
+        for (var j = 0; j < shown; j++){
+          var a = (start + j * 360 / shown) * Math.PI / 180;
+          var cls = "e-dot";
+          if (j < kept) cls += isOuter ? " val" : "";
+          else if (j < now) cls += " gained";
+          else cls += " lost";
+          g.appendChild(svgEl("circle",{
+            cx:(cx + r * Math.cos(a)).toFixed(1), cy:(cy + r * Math.sin(a)).toFixed(1),
+            r:dot, "class":cls
+          }));
+        }
+        svg.appendChild(g);
       }
-      svg.appendChild(g);
 
       svg.appendChild(svgEl("circle",{cx:cx, cy:(cy - r).toFixed(1), r:10, "class":"ring-n-bg"}));
       var t = svgEl("text",{x:cx, y:(cy - r).toFixed(1), "class":"ring-n"});
       t.textContent = "n=" + (i + 1);
       t.setAttribute("style","font-size:11px;font-weight:500");
       svg.appendChild(t);
-    });
+    }
 
     svg.appendChild(svgEl("circle",{cx:cx, cy:cy, r:29, "class":"nuc"}));
     var nz = svgEl("text",{x:cx, y:cy - 2, "class":"nuc-t"});
@@ -718,6 +883,41 @@
     np.setAttribute("style","font-size:11px");
     np.textContent = "p⁺";
     svg.appendChild(np);
+  }
+
+  function changeText(d, ion){
+    var where = [], i;
+    for (i = 0; i < Math.max(d.shells.length, ion.shells.length); i++){
+      if ((ion.shells[i] || 0) !== (d.shells[i] || 0))
+        where.push("n=<span class=\"num\">" + (i + 1) + "</span>");
+    }
+    var list = where.length > 1
+      ? where.slice(0, -1).join(", ") + " and " + where[where.length - 1]
+      : where[0];
+    var n = Math.abs(ion.charge);
+    return (ion.charge > 0 ? "Loses" : "Gains") +
+      " <span class=\"num " + (ion.charge > 0 ? "loss" : "gain") + "\">" + n + "</span> electron" +
+      (n === 1 ? "" : "s") + " " + (ion.charge > 0 ? "from shell" : "into shell") +
+      (where.length > 1 ? "s " : " ") + list + ".";
+  }
+
+  function resultText(d, ion){
+    var kk = ion.shells.length;
+    var outer = kk ? ion.shells[kk - 1] : 0;
+    var same = NOBLE[d.z - ion.charge] ? ", the same arrangement as " + NOBLE[d.z - ion.charge] : "";
+    var at = "Shell n=<span class=\"num\">" + kk + "</span>";
+    if (!kk)
+      return "No electrons are left at all — " + d.sym + chargeSup(ion.charge) +
+             " is a bare proton, which is why it behaves unlike any other ion.";
+    if (outer === 8)
+      return at + " is now the outer shell, with a full octet of <span class=\"num hl\">8</span> e⁻" + same + ".";
+    if (kk === 1 && outer === 2)
+      return "Only shell n=<span class=\"num\">1</span> is left, holding <span class=\"num hl\">2</span> e⁻ — full, the same as helium.";
+    if (d.block === "d")
+      return at + " holds <span class=\"num hl\">" + outer + "</span> e⁻. Transition metals shed their outer s electrons first, then d electrons, and rarely reach an octet.";
+    if (d.block === "f")
+      return at + " holds <span class=\"num hl\">" + outer + "</span> e⁻" + same + ".";
+    return at + " holds <span class=\"num hl\">" + outer + "</span> e⁻ — not an octet. The outer s pair stays behind (chemists call it the inert pair), so this ion sits outside the rule.";
   }
 
   var BLOCK_NOTE = {
@@ -733,6 +933,9 @@
     var d = byZ(z);
     var k = d.shells.length;
     var outer = d.shells[k - 1];
+    var ion = ionMode ? ionOf(d) : null;
+    var blocked = (ionMode && !ion) ? ionMissing(d) : null;
+    var shells = ion ? ion.shells : d.shells;
 
     for (var i=1; i<=118; i++){
       var c = cells[i], e = byZ(i);
@@ -748,47 +951,75 @@
     document.getElementById("head").style.setProperty("--blk","var(--"+d.block+")");
     document.getElementById("panel").style.setProperty("--blk","var(--"+d.block+")");
     document.getElementById("elName").textContent = d.name;
-    document.getElementById("elSym").textContent = d.sym;
+    document.getElementById("elSym").textContent = d.sym + (ion ? chargeSup(ion.charge) : "");
     document.getElementById("elZ").textContent = "Z = " + d.z;
     document.getElementById("elMeta").textContent =
       "Period " + d.period + " · " + (d.group ? "Group " + d.group : (d.z < 89 ? "Lanthanide" : "Actinide")) + " · " + d.block + "-block";
 
-    document.getElementById("rShells").innerHTML =
-      "Row <span class=\"num\">" + d.period + "</span> of the table → <span class=\"num\">" + k +
-      "</span> shell" + (k === 1 ? "" : "s") + " to draw.";
+    document.getElementById("kShells").textContent = ionMode ? "What changes" : "Row → shells";
+    document.getElementById("kVal").textContent =
+      ionMode ? (blocked ? "Why not" : "Result — the octet rule") : "Column → valence electrons";
 
-    var valHTML;
-    if (d.block === "s" || d.block === "p"){
-      var expected = d.group <= 2 ? d.group : d.group - 10;
-      valHTML = "Group <span class=\"num\">" + d.group + "</span> → <span class=\"num hl\">" +
-        expected + "</span> valence electron" + (expected === 1 ? "" : "s") +
-        " in shell n=<span class=\"num\">" + k + "</span>.";
-      if (d.z === 2) valHTML += " Helium is the exception: its one shell holds only 2.";
+    if (ionMode){
+      document.getElementById("rShells").innerHTML = blocked
+        ? "Nothing changes — " + d.name + " has no common simple ion."
+        : changeText(d, ion);
+      document.getElementById("rVal").innerHTML = blocked ? blocked : resultText(d, ion);
     } else {
-      valHTML = "Outermost shell holds <span class=\"num hl\">" + outer + "</span> electron" +
-        (outer === 1 ? "" : "s") + ", filled after the inner " +
-        (d.block === "d" ? "d" : "f") + " shell — the group number does not predict it here.";
+      document.getElementById("rShells").innerHTML =
+        "Row <span class=\"num\">" + d.period + "</span> of the table → <span class=\"num\">" + k +
+        "</span> shell" + (k === 1 ? "" : "s") + " to draw.";
+
+      var valHTML;
+      if (d.block === "s" || d.block === "p"){
+        var expected = d.group <= 2 ? d.group : d.group - 10;
+        valHTML = "Group <span class=\"num\">" + d.group + "</span> → <span class=\"num hl\">" +
+          expected + "</span> valence electron" + (expected === 1 ? "" : "s") +
+          " in shell n=<span class=\"num\">" + k + "</span>.";
+        if (d.z === 2) valHTML += " Helium is the exception: its one shell holds only 2.";
+      } else {
+        valHTML = "Outermost shell holds <span class=\"num hl\">" + outer + "</span> electron" +
+          (outer === 1 ? "" : "s") + ", filled after the inner " +
+          (d.block === "d" ? "d" : "f") + " shell — the group number does not predict it here.";
+      }
+      document.getElementById("rVal").innerHTML = valHTML;
     }
-    document.getElementById("rVal").innerHTML = valHTML;
 
     var list = document.getElementById("shellList");
     list.textContent = "";
     var max = Math.max.apply(null, d.shells);
-    d.shells.forEach(function(count, i){
-      var row = el("div","shell-row" + (i === k - 1 ? " is-outer" : ""),"");
-      row.appendChild(el("span","","n=" + (i + 1)));
+    var rows = Math.max(d.shells.length, shells.length);
+    for (var si = 0; si < rows; si++){
+      var was = d.shells[si] || 0, now = shells[si] || 0;
+      var gone = now === 0 && was > 0;
+      var isOuter = (si === shells.length - 1 && now > 0);
+      var row = el("div","shell-row" + (isOuter ? " is-outer" : "") + (gone ? " is-gone" : ""),"");
+      row.appendChild(el("span","","n=" + (si + 1)));
       var bar = el("div","bar","");
-      bar.style.width = Math.max(4, Math.round(count / max * 100)) + "%";
+      bar.style.width = Math.max(4, Math.round((gone ? was : now) / max * 100)) + "%";
       row.appendChild(bar);
-      row.appendChild(el("span","shell-tag", i === k - 1 ? "valence" : ""));
-      row.appendChild(el("span","cnt", count + " e⁻"));
+      var diff = now - was;
+      row.appendChild(el("span","delta" + (diff > 0 ? " up" : (diff < 0 ? " down" : "")),
+        diff ? (diff > 0 ? "+" + diff : "\u2212" + Math.abs(diff)) : ""));
+      row.appendChild(el("span","shell-tag",
+        isOuter ? (now === 8 ? "octet" : "valence") : (gone ? "empty" : "")));
+      row.appendChild(el("span","cnt", now + " e⁻"));
       list.appendChild(row);
-    });
+    }
 
-    document.getElementById("note").innerHTML = BLOCK_NOTE[d.block];
-    document.getElementById("cfg").textContent = d.cfg;
+    var noteHTML;
+    if (blocked) noteHTML = BLOCK_NOTE[d.block];
+    else if (ion) noteHTML = (ion.charge > 0
+      ? "Metals give up their outer-shell electrons. Once that shell empties, the filled shell beneath it becomes the new outer shell — which is why a positive ion is smaller than the atom it came from."
+      : "Non-metals pull electrons in until the outer shell is full, which is why a negative ion is larger than the atom it came from.")
+      + (ION_ALT[d.z] ? " " + d.name + " also commonly forms " + ION_ALT[d.z] + "." : "");
+    else noteHTML = BLOCK_NOTE[d.block];
+    document.getElementById("note").innerHTML = noteHTML;
 
-    draw(d);
+    document.getElementById("cfgLbl").textContent = ion ? "Ion configuration" : "Electron configuration";
+    document.getElementById("cfg").textContent = ion ? (ion.cfg || "no electrons") : d.cfg;
+
+    draw(d, ion);
     if (scroll && cells[z].scrollIntoView) cells[z].scrollIntoView({block:"nearest", inline:"center"});
   }
 
@@ -803,6 +1034,17 @@
   });
   document.getElementById("prevBtn").addEventListener("click", function(){ select(cur - 1, true); });
   document.getElementById("nextBtn").addEventListener("click", function(){ select(cur + 1, true); });
+  var mNeutral = document.getElementById("modeNeutral");
+  var mIon = document.getElementById("modeIon");
+  function setMode(on){
+    ionMode = on;
+    mNeutral.setAttribute("aria-pressed", String(!on));
+    mIon.setAttribute("aria-pressed", String(on));
+    select(cur, false);
+  }
+  mNeutral.addEventListener("click", function(){ setMode(false); });
+  mIon.addEventListener("click", function(){ setMode(true); });
+
   document.getElementById("spinChk").addEventListener("change", function(){
     svg.classList.toggle("spinning", this.checked);
   });

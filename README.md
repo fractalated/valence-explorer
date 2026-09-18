@@ -17,6 +17,31 @@ The correlation students are meant to discover is printed on the axes of the tab
 So the rule isn't just asserted in a caption — selecting chlorine lights up row 3 and
 column 17, and the diagram beside it shows 3 rings with 7 amber electrons on the outer one.
 
+## The ion explorer
+
+A toggle under the element name switches the diagram between the **neutral atom** and its
+**most common ion**. The change is drawn rather than described:
+
+- Electrons the atom **gains** appear in green with a halo, so you can see an incomplete
+  outer shell become an octet.
+- Electrons it **loses** stay on screen as dashed, hollow outlines, and a shell that
+  empties completely keeps its ring as a dashed ghost — the point being that the shell
+  didn't move, it emptied, and the full shell beneath it is now the outer shell.
+- The readout names the change ("Loses 1 electron from shell n=3") and the result
+  ("Shell n=2 is now the outer shell, with a full octet of 8 e⁻, the same arrangement as
+  neon"), and the shell list shows a +/- delta per shell.
+- The group header carries the common oxidation number for each group, so the pattern
+  down a column is visible before any element is clicked.
+
+Ion shells and configurations are computed, not tabulated: cations lose from the highest
+n first and the highest sub-shell within it, so Fe loses 4s before 3d (Fe³⁺ = [Ar]3d⁵) and
+Pb loses 6p before 6s (Pb²⁺ keeps its 6s² inert pair). Anions fill the outer shell.
+
+Elements with no common simple ion — the noble gases, and carbon, silicon and boron, which
+share electrons instead — say so and explain why rather than inventing a charge. The d- and
+f-block charges are the one most often met in an introductory course; where a second is
+common (Fe²⁺, Cu⁺, Sn⁴⁺, Pb⁴⁺) the panel names it.
+
 Other behavior:
 
 - All 118 elements, periods 1–7, plus the lanthanide and actinide rows with the
