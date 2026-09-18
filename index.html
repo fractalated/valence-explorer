@@ -435,7 +435,12 @@
     .diagram{height:100%; width:auto; max-width:100%; max-height:100%;}
     /* tighten the readout so the leftover height goes to the atom */
     .panel-head{padding:12px 16px 10px;}
+    .modes{margin-top:8px;}
+    .modes button{padding:6px 6px; font-size:12px;}
     .rule{padding:7px 16px; gap:2px 10px;}
+    .rule-v{font-size:13.8px;}
+    .note{font-size:12.5px; padding-bottom:9px;}
+    .diagram-box{min-height:120px;}
     .shells{padding:6px 16px 8px;}
     .shell-row{padding:1px 0;}
     .note{padding:0 16px 10px;}
@@ -896,8 +901,8 @@
       : where[0];
     var n = Math.abs(ion.charge);
     return (ion.charge > 0 ? "Loses" : "Gains") +
-      " <span class=\"num " + (ion.charge > 0 ? "loss" : "gain") + "\">" + n + "</span> electron" +
-      (n === 1 ? "" : "s") + " " + (ion.charge > 0 ? "from shell" : "into shell") +
+      " <span class=\"num " + (ion.charge > 0 ? "loss" : "gain") + "\">" + n + "</span> e⁻ " +
+      (ion.charge > 0 ? "from shell" : "into shell") +
       (where.length > 1 ? "s " : " ") + list + ".";
   }
 
@@ -907,17 +912,17 @@
     var same = NOBLE[d.z - ion.charge] ? ", the same arrangement as " + NOBLE[d.z - ion.charge] : "";
     var at = "Shell n=<span class=\"num\">" + kk + "</span>";
     if (!kk)
-      return "No electrons are left at all — " + d.sym + chargeSup(ion.charge) +
-             " is a bare proton, which is why it behaves unlike any other ion.";
+      return "No electrons left — " + d.sym + chargeSup(ion.charge) + " is a bare proton.";
     if (outer === 8)
-      return at + " is now the outer shell, with a full octet of <span class=\"num hl\">8</span> e⁻" + same + ".";
+      return "Outer shell is now n=<span class=\"num\">" + kk +
+             "</span> with <span class=\"num hl\">8</span> e⁻ — a full octet" + same + ".";
     if (kk === 1 && outer === 2)
-      return "Only shell n=<span class=\"num\">1</span> is left, holding <span class=\"num hl\">2</span> e⁻ — full, the same as helium.";
+      return "Only n=<span class=\"num\">1</span> is left, holding <span class=\"num hl\">2</span> e⁻ — full, like helium.";
     if (d.block === "d")
-      return at + " holds <span class=\"num hl\">" + outer + "</span> e⁻. Transition metals shed their outer s electrons first, then d electrons, and rarely reach an octet.";
+      return at + " holds <span class=\"num hl\">" + outer + "</span> e⁻ — transition metals lose s before d and rarely reach an octet.";
     if (d.block === "f")
       return at + " holds <span class=\"num hl\">" + outer + "</span> e⁻" + same + ".";
-    return at + " holds <span class=\"num hl\">" + outer + "</span> e⁻ — not an octet. The outer s pair stays behind (chemists call it the inert pair), so this ion sits outside the rule.";
+    return at + " keeps <span class=\"num hl\">" + outer + "</span> e⁻ — the inert pair stays behind, so this ion misses the octet.";
   }
 
   var BLOCK_NOTE = {
@@ -1010,8 +1015,8 @@
     var noteHTML;
     if (blocked) noteHTML = BLOCK_NOTE[d.block];
     else if (ion) noteHTML = (ion.charge > 0
-      ? "Metals give up their outer-shell electrons. Once that shell empties, the filled shell beneath it becomes the new outer shell — which is why a positive ion is smaller than the atom it came from."
-      : "Non-metals pull electrons in until the outer shell is full, which is why a negative ion is larger than the atom it came from.")
+      ? "The emptied shell leaves the filled shell beneath as the new surface, so a positive ion is smaller than its atom."
+      : "The extra electrons crowd the outer shell, so a negative ion is larger than its atom.")
       + (ION_ALT[d.z] ? " " + d.name + " also commonly forms " + ION_ALT[d.z] + "." : "");
     else noteHTML = BLOCK_NOTE[d.block];
     document.getElementById("note").innerHTML = noteHTML;
