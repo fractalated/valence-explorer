@@ -150,6 +150,11 @@
   .key i{width:10px; height:10px; border-radius:50%; display:inline-block;}
   .key i.pos{background:var(--pos);} .key i.neg{background:var(--neg);}
   .view-foot label{display:flex; gap:6px; align-items:center; cursor:pointer;}
+  .btn.mini{padding:4px 9px; font-size:11.5px;}
+  .hintdrag{
+    margin-left:auto; font-family:"IBM Plex Mono",monospace; font-size:11.5px;
+    color:var(--ink-3); white-space:nowrap;
+  }
   .view-foot input{accent-color:var(--hl); width:15px; height:15px;}
   .caption{
     padding:10px 14px; font-size:13px; color:var(--ink-2); border-top:1px solid var(--line);
@@ -272,7 +277,9 @@
         <span class="key"><i class="pos"></i> wave positive</span>
         <span class="key"><i class="neg"></i> wave negative</span>
         <label for="allChk"><input type="checkbox" id="allChk"> Show the whole sub-shell</label>
-        <label for="spinChk"><input type="checkbox" id="spinChk" checked> Turn</label>
+        <label for="spinChk"><input type="checkbox" id="spinChk" checked> Turn on its own</label>
+        <button type="button" id="resetView" class="btn mini">Reset angle</button>
+        <span class="hintdrag">Drag the cloud to turn it</span>
       </div>
       <p class="caption" id="caption"></p>
     </section>
@@ -366,6 +373,19 @@
   };
   var PLAIN = {s:"s", px:"px", py:"py", pz:"pz", dxy:"dxy", dxz:"dxz", dyz:"dyz",
                dx2y2:"dx²−y²", dz2:"dz²"};
+  /* [yaw, pitch] that puts each shape side-on rather than end-on, because a dumbbell
+     viewed down its own axis is just a blob. Students can drag away from here. */
+  var BEST = {
+    s:     [0.6, 0.35],
+    px:    [0,    0.12],
+    py:    [-1.5708, 0.12],
+    pz:    [0.5,  0.12],
+    dxy:   [0.7854, 1.35],
+    dxz:   [0,    0.12],
+    dyz:   [-1.5708, 0.12],
+    dx2y2: [0,    1.35],
+    dz2:   [0.5,  0.12]
+  };
   var ANG = {
     s:     function(x,y,z){ return 1; },
     px:    function(x,y,z){ return x; },
@@ -552,8 +572,17 @@
 
   /* ---------- the cloud ---------- */
   function setView(n, l, shape){
+    var changed = !view || view.shape !== shape || view.l !== l;
     view = {n:n, l:l, shape:shape};
+    if (changed && BEST[shape] && !allChk.checked){
+      yaw = BEST[shape][0]; pitch = BEST[shape][1];
+    }
     paint();
+  }
+  function resetView(){
+    var key = view && !allChk.checked ? view.shape : (view ? "s" : "s");
+    var b = BEST[key] || [0.6, 0.35];
+    yaw = b[0]; pitch = b[1];
   }
 
   function currentList(){
@@ -594,7 +623,7 @@
     if (!view || !shapes.length){
       clouds = []; return;
     }
-    var per = shapes.length > 1 ? 1200 : 3200;
+    var per = shapes.length > 1 ? 1300 : 4200;
     clouds = shapes.map(function(sh){ return cloud(view.n, view.l, sh, per); });
   }
 
@@ -781,7 +810,11 @@
       filled++; show(cur, true);
     }, 620);
   });
-  allChk.addEventListener("change", function(){ paint(); drawDiagram(null); });
+  allChk.addEventListener("change", function(){
+    if (!allChk.checked) resetView();
+    paint(); drawDiagram(null);
+  });
+  document.getElementById("resetView").addEventListener("click", function(){ resetView(); });
 
   var jump = document.getElementById("jump"), dl = document.getElementById("elList");
   E.forEach(function(e){
