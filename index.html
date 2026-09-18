@@ -1041,6 +1041,8 @@
       if ((ion.shells[i] || 0) !== (d.shells[i] || 0))
         where.push("n=<span class=\"num\">" + (i + 1) + "</span>");
     }
+    /* a cation empties its outermost shell first, so name them in that order */
+    if (ion.charge > 0) where.reverse();
     var list = where.length > 1
       ? where.slice(0, -1).join(", ") + " and " + where[where.length - 1]
       : where[0];
