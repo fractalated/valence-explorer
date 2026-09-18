@@ -726,8 +726,11 @@
   /* other charges these elements commonly form, shown alongside */
   var ION_ALT = {24:"+6", 25:"+4, +7", 26:"+2", 27:"+3", 29:"+1", 50:"+4", 58:"+4",
                  63:"+2", 79:"+1", 81:"+3", 82:"+4", 92:"+4"};
-  var GROUP_CHARGE = {1:"+1", 2:"+2", 13:"+3", 14:"\u00b14", 15:"\u22123",
-                      16:"\u22122", 17:"\u22121", 18:"0"};
+  /* Ionic charge notation puts the sign after the number (Ca2+), which is exactly
+     what separates it from an oxidation number (+2). Group 14 keeps the
+     oxidation-number form because that is what it is: those elements share. */
+  var GROUP_CHARGE = {1:"1+", 2:"2+", 13:"3+", 14:"\u00b14", 15:"3\u2212",
+                      16:"2\u2212", 17:"1\u2212", 18:"0"};
   var NOBLE = {2:"helium", 10:"neon", 18:"argon", 36:"krypton", 54:"xenon", 86:"radon"};
   var GROUP_TITLE = {
     1:"1 valence e⁻ — loses it to reach +1",
@@ -871,8 +874,9 @@
     gh.appendChild(el("span","gn",String(g)));
     gh.appendChild(el("span","gv", GROUP_VAL[g] || "varies"));
     var chg = GROUP_CHARGE[g];
-    var chgCls = g === 14 ? " share" : (chg && chg.charAt(0) === "+" ? " pos"
-               : (chg && chg.charAt(0) === "\u2212" ? " neg" : ""));
+    var sign = chg ? chg.charAt(chg.length - 1) : "";
+    var chgCls = g === 14 ? " share"
+               : (sign === "+" ? " pos" : (sign === "\u2212" ? " neg" : ""));
     gh.appendChild(el("span","gc" + chgCls, chg || "\u2014"));
     gh.title = GROUP_TITLE[g] ||
       "Transition metals form several different ions — most often +2 or +3";
@@ -1184,8 +1188,8 @@
       ? "<b>" + protons + "</b> p⁺ and <b>" + electrons + "</b> e⁻ cancel exactly, so the atom is <b>neutral</b>."
       : net > 0
         ? "<b>" + net + "</b> proton" + (net === 1 ? "" : "s") + " left with no electron to cancel " +
-          (net === 1 ? "it" : "them") + ", so the charge is <b class=\"pos\">+" + net + "</b>."
-        : "<b>" + (-net) + "</b> electron" + (net === -1 ? "" : "s") + " more than there are protons, so the charge is <b class=\"neg\">−" + (-net) + "</b>.";
+          (net === 1 ? "it" : "them") + ", so the charge is <b class=\"pos\">" + net + "+</b>."
+        : "<b>" + (-net) + "</b> electron" + (net === -1 ? "" : "s") + " more than there are protons, so the charge is <b class=\"neg\">" + (-net) + "−</b>.";
 
     var noteHTML;
     if (blocked) noteHTML = sharesValence(d)
