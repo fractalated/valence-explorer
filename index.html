@@ -732,7 +732,7 @@
   var GROUP_TITLE = {
     1:"1 valence e⁻ — loses it to reach +1",
     2:"2 valence e⁻ — loses both to reach +2",
-    13:"3 valence e⁻ — the metals lose all three to reach +3",
+    13:"3 valence e⁻ — the metals lose all three to reach +3; boron shares instead",
     14:"4 valence e⁻ — halfway to an octet, so these share rather than transfer, ranging from −4 to +4",
     15:"5 valence e⁻ — gains 3 to reach −3",
     16:"6 valence e⁻ — gains 2 to reach −2",
@@ -770,8 +770,8 @@
           (SHARES_FOUR[d.z] || "these elements bond four ways") + "."
     };
     if (d.z === 5) return {
-      does:"Shares its <span class=\"num hl\">3</span> valence e⁻ rather than giving them up.",
-      why:"Boron holds its electrons too tightly to form B³⁺ in ordinary chemistry, so it bonds covalently instead — as in BF₃."
+      does:"Shares its <span class=\"num hl\">3</span> valence e⁻ instead. Boron's oxidation state is <span class=\"num\">+3</span>, but it reaches it by sharing, not by losing them.",
+      why:"Pulling three electrons off an atom this small costs far more energy than bonding gives back, so B³⁺ is unknown in ordinary chemistry — BF₃ and B₂O₃ are covalent. Aluminum, one row down, is big enough to manage Al³⁺."
     };
     return {
       does:"No single ion is common enough to call typical.",
