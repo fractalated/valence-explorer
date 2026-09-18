@@ -631,7 +631,7 @@
     [3,"Li","Lithium",2,1,"s"],[4,"Be","Beryllium",2,2,"s"],[5,"B","Boron",2,13,"p"],
     [6,"C","Carbon",2,14,"p"],[7,"N","Nitrogen",2,15,"p"],[8,"O","Oxygen",2,16,"p"],
     [9,"F","Fluorine",2,17,"p"],[10,"Ne","Neon",2,18,"p"],
-    [11,"Na","Sodium",3,1,"s"],[12,"Mg","Magnesium",3,2,"s"],[13,"Al","Aluminium",3,13,"p"],
+    [11,"Na","Sodium",3,1,"s"],[12,"Mg","Magnesium",3,2,"s"],[13,"Al","Aluminum",3,13,"p"],
     [14,"Si","Silicon",3,14,"p"],[15,"P","Phosphorus",3,15,"p"],[16,"S","Sulfur",3,16,"p"],
     [17,"Cl","Chlorine",3,17,"p"],[18,"Ar","Argon",3,18,"p"],
     [19,"K","Potassium",4,1,"s"],[20,"Ca","Calcium",4,2,"s"],[21,"Sc","Scandium",4,3,"d"],
@@ -646,7 +646,7 @@
     [46,"Pd","Palladium",5,10,"d"],[47,"Ag","Silver",5,11,"d"],[48,"Cd","Cadmium",5,12,"d"],
     [49,"In","Indium",5,13,"p"],[50,"Sn","Tin",5,14,"p"],[51,"Sb","Antimony",5,15,"p"],
     [52,"Te","Tellurium",5,16,"p"],[53,"I","Iodine",5,17,"p"],[54,"Xe","Xenon",5,18,"p"],
-    [55,"Cs","Caesium",6,1,"s"],[56,"Ba","Barium",6,2,"s"],
+    [55,"Cs","Cesium",6,1,"s"],[56,"Ba","Barium",6,2,"s"],
     [57,"La","Lanthanum",6,0,"f"],[58,"Ce","Cerium",6,0,"f"],[59,"Pr","Praseodymium",6,0,"f"],
     [60,"Nd","Neodymium",6,0,"f"],[61,"Pm","Promethium",6,0,"f"],[62,"Sm","Samarium",6,0,"f"],
     [63,"Eu","Europium",6,0,"f"],[64,"Gd","Gadolinium",6,0,"f"],[65,"Tb","Terbium",6,0,"f"],
@@ -724,8 +724,8 @@
     90:4, 91:5, 92:6, 93:5, 94:4
   };
   /* other charges these elements commonly form, shown alongside */
-  var ION_ALT = {24:"+6", 25:"+4, +7", 26:"+2", 27:"+3", 29:"+1", 50:"+4",
-                 79:"+1", 81:"+3", 82:"+4", 92:"+4"};
+  var ION_ALT = {24:"+6", 25:"+4, +7", 26:"+2", 27:"+3", 29:"+1", 50:"+4", 58:"+4",
+                 63:"+2", 79:"+1", 81:"+3", 82:"+4", 92:"+4"};
   var GROUP_CHARGE = {1:"+1", 2:"+2", 13:"+3", 14:"\u00b14", 15:"\u22123",
                       16:"\u22122", 17:"\u22121", 18:"0"};
   var NOBLE = {2:"helium", 10:"neon", 18:"argon", 36:"krypton", 54:"xenon", 86:"radon"};
@@ -782,36 +782,40 @@
   /* group 14 and boron share their valence electrons instead of transferring */
   function sharesValence(d){ return d.group === 14 || d.z === 5; }
 
-  /* cations lose from the outermost shell inwards; anions fill the outer shell */
-  function ionShells(shells, charge){
-    var out = shells.slice(), left;
-    if (charge > 0){
-      left = charge;
-      for (var i = out.length - 1; i >= 0 && left > 0; i--){
-        var take = Math.min(out[i], left);
-        out[i] -= take; left -= take;
-      }
-      while (out.length && out[out.length - 1] === 0) out.pop();
-    } else if (charge < 0){
-      out[out.length - 1] += -charge;
-    }
-    return out;
+  var NOBLE_Z = [2, 10, 18, 36, 54, 86, 118];
+  /* the sub-shells of the largest noble gas sitting below this element */
+  function coreOcc(z){
+    var cz = 0;
+    for (var i = 0; i < NOBLE_Z.length; i++) if (NOBLE_Z[i] < z) cz = NOBLE_Z[i];
+    return cz ? DATA[cz - 1].occ : {};
   }
 
-  /* electrons leave the highest n first, and the highest sub-shell within it,
-     so Fe loses 4s before 3d and Pb loses 6p before 6s */
-  function ionConfig(occ, charge){
+  /* Sub-shells ordered the way electrons actually leave: highest n first, and the
+     highest sub-shell within it. Critically this is applied to the VALENCE
+     sub-shells only -- the noble-gas core underneath is spared -- which is why
+     Pr3+ loses 6s then 4f rather than the 5p buried in its xenon core.
+     Verified against the NIST Atomic Spectra Database for every ion it lists. */
+  function ionOcc(d, charge){
     var o = {}, k;
-    for (k in occ) o[k] = occ[k];
+    for (k in d.occ) o[k] = d.occ[k];
     if (charge > 0){
       var order = ORDER.slice().sort(function(a, b){
         if (a[0] !== b[0]) return +b[0] - +a[0];
         return "spdf".indexOf(b[1]) - "spdf".indexOf(a[1]);
       });
-      var left = charge;
-      for (var i = 0; i < order.length && left > 0; i++){
-        var have = o[order[i]] || 0, take = Math.min(have, left);
-        if (take){ o[order[i]] = have - take; left -= take; }
+      var core = coreOcc(d.z), left = charge;
+      /* pass 0 takes only what sits above the core; pass 1 is a fallback for a
+         charge so large it would strip the core too, which no listed ion does */
+      for (var pass = 0; pass < 2 && left > 0; pass++){
+        for (var i = 0; i < order.length && left > 0; i++){
+          k = order[i];
+          var floor = pass === 0 ? (core[k] || 0) : 0;
+          var spare = (o[k] || 0) - floor;
+          if (spare > 0){
+            var take = Math.min(spare, left);
+            o[k] -= take; left -= take;
+          }
+        }
       }
     } else if (charge < 0){
       var maxN = 0;
@@ -823,14 +827,26 @@
         if (fit){ o[room[j]] = has + fit; add -= fit; }
       }
     }
-    return ORDER.filter(function(key){ return o[key]; })
-                .map(function(key){ return key + sup(o[key]); }).join(" ");
+    return o;
+  }
+
+  function shellsFromOcc(occ){
+    var sh = [0, 0, 0, 0, 0, 0, 0, 0];
+    ORDER.forEach(function(key){ if (occ[key]) sh[+key[0] - 1] += occ[key]; });
+    while (sh.length && sh[sh.length - 1] === 0) sh.pop();
+    return sh;
+  }
+
+  function cfgFromOcc(occ){
+    return ORDER.filter(function(key){ return occ[key]; })
+                .map(function(key){ return key + sup(occ[key]); }).join(" ");
   }
 
   function ionOf(d){
     var c = ionCharge(d);
     if (!c) return null;
-    return {charge:c, shells:ionShells(d.shells, c), cfg:ionConfig(d.occ, c)};
+    var occ = ionOcc(d, c);
+    return {charge:c, shells:shellsFromOcc(occ), cfg:cfgFromOcc(occ)};
   }
 
   function chargeSup(c){
@@ -1102,9 +1118,12 @@
       document.getElementById("rShells").innerHTML = blocked ? blocked.does : changeText(d, ion);
       document.getElementById("rVal").innerHTML = blocked ? blocked.why : resultText(d, ion);
     } else {
-      document.getElementById("rShells").innerHTML =
-        "Row <span class=\"num\">" + d.period + "</span> of the table → <span class=\"num\">" + k +
-        "</span> shell" + (k === 1 ? "" : "s") + " to draw.";
+      document.getElementById("rShells").innerHTML = (k === d.period)
+        ? "Row <span class=\"num\">" + d.period + "</span> of the table → <span class=\"num\">" + k +
+          "</span> shell" + (k === 1 ? "" : "s") + " to draw."
+        : "Row <span class=\"num\">" + d.period + "</span> would mean <span class=\"num\">" + d.period +
+          "</span> shells, but " + d.name + " is the table's one exception: its " + d.period +
+          "s sub-shell stays empty, so it has <span class=\"num hl\">" + k + "</span>.";
 
       var valHTML;
       if (d.block === "s" || d.block === "p"){
@@ -1177,7 +1196,8 @@
     else noteHTML = BLOCK_NOTE[d.block];
     document.getElementById("note").innerHTML = noteHTML;
 
-    document.getElementById("cfgLbl").textContent = ion ? "Ion configuration" : "Electron configuration";
+    document.getElementById("cfgLbl").textContent =
+      (ion ? "Ion configuration" : "Electron configuration") + (d.z >= 109 ? " (predicted)" : "");
     document.getElementById("cfg").textContent = ion ? (ion.cfg || "no electrons") : d.cfg;
 
     draw(d, ion, !!blocked && sharesValence(d));

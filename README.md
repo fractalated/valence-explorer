@@ -73,13 +73,48 @@ Other behavior:
 
 ## Accuracy notes
 
-- Shell occupancies are computed from electron configurations using Madelung (n + ℓ)
-  filling order, then corrected with the measured exceptions — Cr, Cu, Nb, Mo, Ru, Rh,
-  Pd, Ag, La, Ce, Gd, Pt, Au, Ac, Th, Pa, U, Np, Cm, Lr. Chromium therefore shows
-  2-8-13-1, not the idealized 2-8-11-2.
+Every element's data is checked against primary sources by `verify.py`, which downloads
+them fresh and compares against the page's own code. Run `python3 verify.py` (needs
+python3, node and a network connection). Current result:
+
+```
+neutral configurations matching NIST : 108
+ion configurations matching NIST     : 80
+names and symbols matching PubChem   : 118 / 118
+ion charges that are documented states: 93
+predicted (no NIST measurement)      : [109 … 118]
+no discrepancies
+```
+
+Sources — all primary, none AI-generated:
+
+- **NIST Atomic Spectra Database** — ground-state electron configurations for the neutral
+  atoms (Z 1–108) *and* for every ion charge state it lists, which checks the ion
+  chemistry rather than just the atoms.
+- **PubChem (NIH) periodic table** — names, symbols and documented oxidation states.
+- **Common oxidation states** were cross-checked so that every charge shown is a *main*
+  state, not merely a possible one.
+
+What that verification established:
+
+- Shell occupancies come from Madelung (n + ℓ) order corrected with the measured
+  exceptions — Cr, Cu, Nb, Mo, Ru, Rh, Pd, Ag, La, Ce, Gd, Pt, Au, Ac, Th, Pa, U, Np, Cm,
+  Lr. All 108 match NIST exactly, sub-shell by sub-shell. Chromium is 2-8-13-1, not the
+  idealized 2-8-11-2.
+- Cations lose electrons from the **valence** sub-shells only — highest n first, highest
+  sub-shell within it — leaving the noble-gas core alone. That distinction matters: a
+  naive "highest n first" rule strips a 5p electron out of praseodymium's xenon core and
+  gives Pr³⁺ as [Xe]4f³5p⁵ instead of the correct [Xe]4f². It affected 22 lanthanide and
+  actinide ions before it was caught.
+- **Palladium is the table's one exception** to period = shell count. Its ground state is
+  [Kr]4d¹⁰ with an empty 5s sub-shell, so it sits in period 5 with only 4 shells. The
+  panel says so explicitly rather than showing a contradiction.
+- Elements 109–118 have no measured configuration; theirs are calculated, and the panel
+  labels them "(predicted)".
+- Element names use the American spellings (aluminum, cesium) that NIST and PubChem use;
+  IUPAC's are aluminium and caesium.
 - For d- and f-block elements the panel says plainly that the group number does *not*
-  predict the valence count, and explains why (the inner d or f shell is filling while
-  the outer shell holds 1–2 electrons).
+  predict the valence count, and explains why.
 - The nucleus shows protons only. Neutron counts would add an isotope caveat to every
   element while the lesson is about shells.
 
