@@ -61,9 +61,11 @@ Other behavior:
   to walk across a period and watch the outer shell fill.
 - Orbit motion can be switched off, and is off automatically for anyone whose system
   asks for reduced motion.
-- A **Dark / Light button** sits beside the title. The page follows the device's
-  appearance setting until someone presses it, after which that choice is remembered in
-  the browser (per device — it is not shared between students).
+- **Dark mode is the default**, whatever the device's appearance setting is, because the
+  diagram reads better on a dark ground. The button beside the title switches to light
+  mode, and that choice is remembered in the browser (per device — it is not shared
+  between students). The theme is stamped before first paint, so the page never flashes
+  the wrong one.
 - **On phones** the diagram sits beside the row/column readout in a card pinned to the top
   of the screen, the shell counts and configuration collapse behind a tap, and the table
   keeps its canonical shape in a horizontal scroller below. Landscape shows more of the

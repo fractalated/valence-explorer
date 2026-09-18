@@ -514,6 +514,16 @@
 
   .b-s{--blk:var(--s);} .b-p{--blk:var(--p);} .b-d{--blk:var(--d);} .b-f{--blk:var(--f);}
 </style>
+
+<script>
+  /* Dark is the default here rather than the system setting: the diagram reads
+     better on a dark ground. Runs before the body so the theme never flashes. */
+  (function(){
+    var t = null;
+    try { t = localStorage.getItem("ve-theme"); } catch (e) {}
+    document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
+  })();
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -523,7 +533,7 @@
       <h1>Shells &amp; Valence Explorer</h1>
       <p class="lede">Pick any element. Its <b>row</b> tells you how many electron shells to draw; for the main groups, its <b>column</b> tells you how many electrons land in the outermost one.</p>
     </div>
-    <button type="button" id="themeBtn" class="theme-btn">Dark</button>
+    <button type="button" id="themeBtn" class="theme-btn">Light mode</button>
   </header>
 
   <div class="stage">
@@ -1227,19 +1237,15 @@
   else if (wide.addListener) wide.addListener(syncMore);
   syncMore();
 
-  /* the page follows the system appearance until someone chooses here */
+  /* the theme itself is stamped before first paint, up with the stylesheet */
   var root = document.documentElement;
   var themeBtn = document.getElementById("themeBtn");
-  var sysDark = window.matchMedia("(prefers-color-scheme: dark)");
 
-  function isDark(){
-    var set = root.getAttribute("data-theme");
-    return set ? set === "dark" : sysDark.matches;
-  }
+  function isDark(){ return root.getAttribute("data-theme") !== "light"; }
   function paintThemeBtn(){
     var dark = isDark();
-    themeBtn.textContent = dark ? "Light" : "Dark";
-    themeBtn.title = dark ? "Switch to the light theme" : "Switch to the dark theme";
+    themeBtn.textContent = dark ? "Light mode" : "Dark mode";
+    themeBtn.title = dark ? "Switch to light mode" : "Switch to dark mode";
     themeBtn.setAttribute("aria-label", themeBtn.title);
   }
   themeBtn.addEventListener("click", function(){
@@ -1248,12 +1254,6 @@
     try { localStorage.setItem("ve-theme", next); } catch (e) {}
     paintThemeBtn();
   });
-  try {
-    var saved = localStorage.getItem("ve-theme");
-    if (saved === "light" || saved === "dark") root.setAttribute("data-theme", saved);
-  } catch (e) {}
-  if (sysDark.addEventListener) sysDark.addEventListener("change", paintThemeBtn);
-  else if (sysDark.addListener) sysDark.addListener(paintThemeBtn);
   paintThemeBtn();
 
   select(17, false);
