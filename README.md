@@ -20,7 +20,9 @@ column 17, and the diagram beside it shows 3 rings with 7 amber electrons on the
 ## The ion explorer
 
 A toggle under the element name switches the diagram between the **neutral atom** and its
-**most common ion**. The change is drawn rather than described:
+**most common ion**. Choosing a different element always returns to the neutral atom, so
+seeing the ion is a deliberate step rather than a mode a student forgets they are in.
+The change is drawn rather than described:
 
 - Electrons the atom **gains** appear in green with a halo, so you can see an incomplete
   outer shell become an octet.
@@ -32,6 +34,12 @@ A toggle under the element name switches the diagram between the **neutral atom*
   neon"), and the shell list shows a +/- delta per shell.
 - The group header carries the common oxidation number for each group, so the pattern
   down a column is visible before any element is clicked.
+- A **proton/electron balance** under the diagram shows why the charge is what it is: two
+  bars on a shared scale, equal when the atom is neutral. An unbalanced proton appears as
+  a red segment sitting directly beneath the dashed gap where its electron used to be.
+- Group 14 and boron **share** rather than transfer: their valence electrons get an amber
+  halo and the panel explains that four valence electrons sit halfway to an octet, so
+  losing four and gaining four cost about the same.
 
 Ion shells and configurations are computed, not tabulated: cations lose from the highest
 n first and the highest sub-shell within it, so Fe loses 4s before 3d (Fe³⁺ = [Ar]3d⁵) and

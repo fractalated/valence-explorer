@@ -909,6 +909,18 @@
   var svg = document.getElementById("svg");
   var cur = 17;
   var ionMode = false;
+  var mNeutral = document.getElementById("modeNeutral");
+  var mIon = document.getElementById("modeIon");
+
+  function setModeState(on){
+    ionMode = on;
+    mNeutral.setAttribute("aria-pressed", String(!on));
+    mIon.setAttribute("aria-pressed", String(on));
+  }
+  function setMode(on){
+    setModeState(on);
+    select(cur, false, true);
+  }
 
   function svgEl(tag, attrs){
     var n = document.createElementNS(SVGNS, tag);
@@ -1017,8 +1029,11 @@
     f: "Lanthanides and actinides fill an f shell two levels in. The outer shell stays at 2 electrons, so these rows are read by shell count, not by valence."
   };
 
-  function select(z, scroll){
+  /* keepMode is only set by the toggle itself: every other way of choosing an
+     element drops back to the neutral atom, so the ion is always a deliberate step */
+  function select(z, scroll, keepMode){
     if (z < 1 || z > 118) return;
+    if (!keepMode && ionMode) setModeState(false);
     cur = z;
     var d = byZ(z);
     var k = d.shells.length;
@@ -1148,14 +1163,6 @@
   });
   document.getElementById("prevBtn").addEventListener("click", function(){ select(cur - 1, true); });
   document.getElementById("nextBtn").addEventListener("click", function(){ select(cur + 1, true); });
-  var mNeutral = document.getElementById("modeNeutral");
-  var mIon = document.getElementById("modeIon");
-  function setMode(on){
-    ionMode = on;
-    mNeutral.setAttribute("aria-pressed", String(!on));
-    mIon.setAttribute("aria-pressed", String(on));
-    select(cur, false);
-  }
   mNeutral.addEventListener("click", function(){ setMode(false); });
   mIon.addEventListener("click", function(){ setMode(true); });
 
