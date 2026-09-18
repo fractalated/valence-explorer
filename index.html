@@ -27,7 +27,8 @@
     --line:#d3d8d2; --line-2:#bcc3bb;
     --s:#1d6f86; --p:#a8552b; --d:#4f6b3a; --f:#7a4a74;
     --hl:#b9791a; --hl-soft:#e8d3a4;
-    --gain:#2f7d4f; --loss:#b0452c;
+    --gain:#0f7a3d; --loss:#c0392b;
+    --gain-dot:#11a54f; --loss-dot:#e23b1c;
     --nuc:#2d3733;
     --shadow:0 1px 2px rgba(23,28,25,.06), 0 8px 24px -16px rgba(23,28,25,.25);
   }
@@ -38,7 +39,8 @@
       --line:#2b3238; --line-2:#3a434a;
       --s:#6fc0d8; --p:#e0946a; --d:#9dc47c; --f:#c99bc4;
       --hl:#f0c14b; --hl-soft:#4a3d1c;
-      --gain:#7fcb98; --loss:#e8907a;
+      --gain:#5fe09b; --loss:#ff8a6b;
+      --gain-dot:#4ade80; --loss-dot:#ff7a55;
       --nuc:#cdd6d1;
       --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
     }
@@ -49,7 +51,8 @@
     --line:#2b3238; --line-2:#3a434a;
     --s:#6fc0d8; --p:#e0946a; --d:#9dc47c; --f:#c99bc4;
     --hl:#f0c14b; --hl-soft:#4a3d1c;
-    --gain:#7fcb98; --loss:#e8907a;
+    --gain:#5fe09b; --loss:#ff8a6b;
+    --gain-dot:#4ade80; --loss-dot:#ff7a55;
     --nuc:#cdd6d1;
     --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
   }
@@ -132,17 +135,19 @@
   }
   .modes button:focus-visible{outline:2px solid var(--hl); outline-offset:-2px;}
 
-  .ring-line{fill:none; stroke:var(--line-2); stroke-width:1;}
-  .ring-line.outer{stroke:var(--hl); stroke-width:1.4;}
+  .ring-line{fill:none; stroke:var(--line-2); stroke-width:1.4;}
+  .ring-line.outer{stroke:var(--hl); stroke-width:2.2;}
   .e-dot{fill:var(--ink-2);}
   .e-dot.val{fill:var(--hl);}
-  .e-dot.gained{fill:var(--gain); stroke:var(--gain); stroke-width:3.5; stroke-opacity:.3;}
-  .e-dot.shared{fill:var(--hl); stroke:var(--hl); stroke-width:3; stroke-opacity:.34;}
+  .e-dot.gained{fill:var(--gain-dot); stroke:var(--gain-dot); stroke-width:5.5; stroke-opacity:.38;}
+  .e-dot.shared{fill:var(--hl); stroke:var(--hl); stroke-width:4.5; stroke-opacity:.38;}
   .e-dot.lost{
-    fill:var(--loss); fill-opacity:.16;
-    stroke:var(--loss); stroke-width:1.8; stroke-dasharray:2.4 2; opacity:.9;
+    fill:var(--loss-dot); fill-opacity:.2;
+    stroke:var(--loss-dot); stroke-width:2.4; stroke-dasharray:3 2.4; opacity:1;
   }
-  .ring-line.ghost{stroke:var(--loss); stroke-dasharray:4 5; opacity:.5;}
+  .ring-line.ghost{stroke:var(--loss-dot); stroke-width:1.8; stroke-dasharray:6 4; opacity:.8;}
+  /* in ion mode the unchanged inner electrons step back so the change reads first */
+  .diagram.ion .e-dot:not(.val):not(.gained):not(.lost){opacity:.42;}
   @media (prefers-reduced-motion:no-preference){
     .e-dot.gained{transform-box:fill-box; transform-origin:center; animation:pop .5s ease-out;}
   }
@@ -154,7 +159,7 @@
   }
   .ring-n{
     fill:var(--ink-2); font-family:"IBM Plex Mono",ui-monospace,monospace;
-    font-size:11px; font-weight:500; text-anchor:middle; dominant-baseline:middle;
+    font-size:12.5px; font-weight:600; text-anchor:middle; dominant-baseline:middle;
   }
   .ring-n-bg{fill:var(--surface);}
   .spin{transform-origin:170px 170px;}
@@ -174,8 +179,8 @@
   .bal-bar, .bal-x, .bal-ghost{height:100%; transition:width .25s ease;}
   .bal-bar.p{background:var(--nuc);}
   .bal-bar.e{background:var(--ink-2);}
-  .bal-x.pos{background:var(--loss);}
-  .bal-x.neg{background:var(--gain);}
+  .bal-x.pos{background:var(--loss-dot);}
+  .bal-x.neg{background:var(--gain-dot);}
   .bal-ghost{border:1px dashed var(--line-2); border-left:0; border-radius:0 2px 2px 0;}
   .bal-v{text-align:right; font-variant-numeric:tabular-nums; color:var(--ink); font-weight:600;}
   .bal-net{margin:6px 0 0; font-size:12px; line-height:1.4; color:var(--ink-2);}
@@ -932,11 +937,12 @@
      radii so an emptied shell stays visible as a ghost of what was there */
   function draw(d, ion, sharing){
     while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild);
+    svg.classList.toggle("ion", !!ion || !!sharing);
     var cx = 170, cy = 170;
     var target = ion ? ion.shells : d.shells;
     var rings = Math.max(d.shells.length, target.length);
     var outerIdx = target.length - 1;
-    var first = 52, last = 156;
+    var first = 62, last = 156;
     var step = rings > 1 ? (last - first) / (rings - 1) : 0;
 
     for (var i = 0; i < rings; i++){
@@ -952,7 +958,8 @@
         var g = svgEl("g",{"class":"spin"});
         g.style.setProperty("--dur", (34 + i * 13) + "s");
         if (i % 2) g.style.animationDirection = "reverse";
-        var dot = shown > 18 ? 3.1 : (shown > 8 ? 4 : 5);
+        var dot = shown > 18 ? 4.3 : (shown > 8 ? 5.6 : 7.2);
+        if (rings > 1) dot = Math.min(dot, step / 2 - 0.6);   /* never touch the next ring */
         var start = -90 + 180 / shown;
         var kept = Math.min(was, now);
         for (var j = 0; j < shown; j++){
@@ -969,20 +976,20 @@
         svg.appendChild(g);
       }
 
-      svg.appendChild(svgEl("circle",{cx:cx, cy:(cy - r).toFixed(1), r:10, "class":"ring-n-bg"}));
+      svg.appendChild(svgEl("circle",{cx:cx, cy:(cy - r).toFixed(1), r:11.5, "class":"ring-n-bg"}));
       var t = svgEl("text",{x:cx, y:(cy - r).toFixed(1), "class":"ring-n"});
       t.textContent = "n=" + (i + 1);
-      t.setAttribute("style","font-size:11px;font-weight:500");
+      t.setAttribute("style","font-size:12.5px;font-weight:600");
       svg.appendChild(t);
     }
 
-    svg.appendChild(svgEl("circle",{cx:cx, cy:cy, r:29, "class":"nuc"}));
-    var nz = svgEl("text",{x:cx, y:cy - 2, "class":"nuc-t"});
-    nz.setAttribute("style","font-size:20px");
+    svg.appendChild(svgEl("circle",{cx:cx, cy:cy, r:38, "class":"nuc"}));
+    var nz = svgEl("text",{x:cx, y:cy - 3, "class":"nuc-t"});
+    nz.setAttribute("style","font-size:27px");
     nz.textContent = d.z;
     svg.appendChild(nz);
-    var np = svgEl("text",{x:cx, y:cy + 15, "class":"nuc-t"});
-    np.setAttribute("style","font-size:11px");
+    var np = svgEl("text",{x:cx, y:cy + 19, "class":"nuc-t"});
+    np.setAttribute("style","font-size:14px");
     np.textContent = "p⁺";
     svg.appendChild(np);
   }
