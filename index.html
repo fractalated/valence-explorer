@@ -163,6 +163,27 @@
   }
   @keyframes orbit{to{transform:rotate(360deg);}}
 
+  /* ---------- proton / electron balance ---------- */
+  .balance{padding:9px 16px 10px; border-top:1px solid var(--line);}
+  .bal-row{
+    display:grid; grid-template-columns:4.8em minmax(0,1fr) 2.4em; gap:8px; align-items:center;
+    font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:10.5px;
+    color:var(--ink-2); padding:1.5px 0;
+  }
+  .bal-track{display:flex; height:9px; border-radius:2px; overflow:hidden;}
+  .bal-bar, .bal-x, .bal-ghost{height:100%; transition:width .25s ease;}
+  .bal-bar.p{background:var(--nuc);}
+  .bal-bar.e{background:var(--ink-2);}
+  .bal-x.pos{background:var(--loss);}
+  .bal-x.neg{background:var(--gain);}
+  .bal-ghost{border:1px dashed var(--line-2); border-left:0; border-radius:0 2px 2px 0;}
+  .bal-v{text-align:right; font-variant-numeric:tabular-nums; color:var(--ink); font-weight:600;}
+  .bal-net{margin:6px 0 0; font-size:12px; line-height:1.4; color:var(--ink-2);}
+  .bal-net b{color:var(--ink); font-weight:600;}
+  .bal-net b.pos{color:var(--loss);}
+  .bal-net b.neg{color:var(--gain);}
+  @media (prefers-reduced-motion:reduce){ .bal-bar, .bal-x, .bal-ghost{transition:none;} }
+
   /* ---------- readout ---------- */
   .rules{border-top:1px solid var(--line);}
   .rule{
@@ -378,7 +399,7 @@
   .more > summary::after{content:"▾"; font-size:13px; color:var(--ink-3);}
   .more[open] > summary::after{content:"▴";}
   .more > summary:focus-visible{outline:2px solid var(--hl); outline-offset:-2px;}
-  @media (min-width:700px){ .more > summary{display:none;} }
+  @media (min-width:700px) and (min-height:860px){ .more > summary{display:none;} }
 
   /* ---------- below 1000px the panel runs full width, so sit the diagram
                   beside the two rules instead of above them ---------- */
@@ -391,7 +412,7 @@
     .rules .rule-v{overflow-wrap:break-word;}
     .rules .rule{padding:8px 14px;}
     .more{min-width:0;}
-    .more, .controls{grid-column:1 / -1;}
+    .balance, .more, .controls{grid-column:1 / -1;}
     .diagram{max-height:230px;}
   }
 
@@ -432,7 +453,7 @@
       position:static; height:100%; min-height:0;
       display:flex; flex-direction:column; overflow:hidden auto;
     }
-    .panel-head, .modes, .rules, .more, .controls{flex:none;}
+    .panel-head, .modes, .balance, .rules, .more, .controls{flex:none;}
     .diagram-box{
       flex:1 1 auto; min-height:130px; padding:8px 12px;
       display:flex; align-items:center; justify-content:center;
@@ -521,6 +542,24 @@
         <svg class="diagram spinning" id="svg" viewBox="0 0 340 340" role="img" aria-labelledby="svgTitle">
           <title id="svgTitle">Bohr diagram</title>
         </svg>
+      </div>
+
+      <div class="balance">
+        <div class="bal-row">
+          <span class="bal-k">protons</span>
+          <span class="bal-track">
+            <span class="bal-bar p" id="barP"></span><span class="bal-x pos" id="barPx"></span><span class="bal-ghost" id="barPg"></span>
+          </span>
+          <span class="bal-v" id="valP">17</span>
+        </div>
+        <div class="bal-row">
+          <span class="bal-k">electrons</span>
+          <span class="bal-track">
+            <span class="bal-bar e" id="barE"></span><span class="bal-x neg" id="barEx"></span><span class="bal-ghost" id="barEg"></span>
+          </span>
+          <span class="bal-v" id="valE">17</span>
+        </div>
+        <p class="bal-net" id="balNet"></p>
       </div>
 
       <div class="rules">
@@ -1057,6 +1096,25 @@
       list.appendChild(row);
     }
 
+    var protons = d.z, electrons = ion ? d.z - ion.charge : d.z;
+    var bmax = Math.max(protons, electrons), both = Math.min(protons, electrons);
+    function pct(n){ return (n / bmax * 100) + "%"; }
+    document.getElementById("barP").style.width = pct(both);
+    document.getElementById("barPx").style.width = pct(Math.max(0, protons - electrons));
+    document.getElementById("barPg").style.width = pct(Math.max(0, electrons - protons));
+    document.getElementById("barE").style.width = pct(both);
+    document.getElementById("barEx").style.width = pct(Math.max(0, electrons - protons));
+    document.getElementById("barEg").style.width = pct(Math.max(0, protons - electrons));
+    document.getElementById("valP").textContent = protons;
+    document.getElementById("valE").textContent = electrons;
+    var net = protons - electrons;
+    document.getElementById("balNet").innerHTML = net === 0
+      ? "<b>" + protons + "</b> p⁺ and <b>" + electrons + "</b> e⁻ cancel exactly, so the atom is <b>neutral</b>."
+      : net > 0
+        ? "<b>" + net + "</b> proton" + (net === 1 ? "" : "s") + " left with no electron to cancel " +
+          (net === 1 ? "it" : "them") + ", so the charge is <b class=\"pos\">+" + net + "</b>."
+        : "<b>" + (-net) + "</b> electron" + (net === -1 ? "" : "s") + " more than there are protons, so the charge is <b class=\"neg\">−" + (-net) + "</b>.";
+
     var noteHTML;
     if (blocked) noteHTML = sharesValence(d)
       ? "The valence electrons are ringed in amber: they stay on the atom and are shared into bonds, not handed over."
@@ -1130,7 +1188,7 @@
 
   /* the shell list and configuration collapse on phones, stay open on wider screens */
   var more = document.getElementById("more");
-  var wide = window.matchMedia("(min-width:700px)");
+  var wide = window.matchMedia("(min-width:700px) and (min-height:860px)");
   function syncMore(){ more.open = wide.matches; }
   if (wide.addEventListener) wide.addEventListener("change", syncMore);
   else if (wide.addListener) wide.addListener(syncMore);
